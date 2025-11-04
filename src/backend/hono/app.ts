@@ -5,6 +5,8 @@ import { withSupabase } from "@/backend/middleware/supabase";
 import { registerExampleRoutes } from "@/features/example/backend/route";
 import { registerOnboardingRoutes } from "@/features/auth/backend/onboarding/route";
 import { registerCoursesRoutes } from "@/features/courses/backend/route";
+import { registerAssignmentsRoutes } from "@/features/assignments/backend/route";
+import { registerLearnerAssignmentsRoutes } from "@/features/learner-assignments/backend/route";
 import { registerEnrollmentsRoutes } from "@/features/enrollments/backend/route";
 import { registerDashboardRoutes } from "@/features/dashboard/backend/route";
 import type { AppEnv } from "@/backend/hono/context";
@@ -24,6 +26,8 @@ export const createHonoApp = () => {
 
   registerOnboardingRoutes(app);
   registerCoursesRoutes(app);
+  registerAssignmentsRoutes(app);
+  registerLearnerAssignmentsRoutes(app);
   registerEnrollmentsRoutes(app);
   registerDashboardRoutes(app);
   registerExampleRoutes(app);
