@@ -185,3 +185,7 @@ pids
 
 # Turbo
 .turbo
+
+# Documentation files (internal)
+docs/prd.md
+docs/userflow.md
