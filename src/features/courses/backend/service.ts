@@ -7,6 +7,7 @@ import type { CourseListParams } from '@/lib/shared/course-types';
 const COURSES_TABLE = 'courses';
 const CATEGORIES_TABLE = 'categories';
 const DIFFICULTIES_TABLE = 'difficulties';
+const ENROLLMENTS_TABLE = 'enrollments';
 
 export const getCourses = async (
   client: SupabaseClient,
@@ -128,6 +129,63 @@ export const getDifficulties = async (
     }
 
     return success(data || []);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return failure(500, coursesErrorCodes.fetchError, errorMessage);
+  }
+};
+
+export const getCoursesByLearner = async (
+  client: SupabaseClient,
+  userId: string,
+): Promise<HandlerResult<CourseListResponse, CoursesServiceError, unknown>> => {
+  try {
+    const { data, error } = await client
+      .from(ENROLLMENTS_TABLE)
+      .select(
+        `
+        courses(
+          id,
+          title,
+          description,
+          status,
+          instructor_id,
+          category_id,
+          difficulty_id,
+          created_at,
+          updated_at,
+          categories(id, name),
+          difficulties(id, name)
+        )
+      `,
+        { count: 'exact' }
+      )
+      .eq('user_id', userId);
+
+    if (error) {
+      return failure(500, coursesErrorCodes.fetchError, error.message);
+    }
+
+    const courses: CourseSummaryResponse[] = (data || [])
+      .filter((enrollment) => enrollment.courses !== null)
+      .map((enrollment) => {
+        const row = enrollment.courses as any;
+        return {
+          id: row.id,
+          title: row.title,
+          description: row.description,
+          status: row.status,
+          instructorId: row.instructor_id,
+          categoryId: row.category_id,
+          difficultyId: row.difficulty_id,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+          category: row.categories ? { id: row.categories.id, name: row.categories.name } : null,
+          difficulty: row.difficulties ? { id: row.difficulties.id, name: row.difficulties.name } : null,
+        };
+      });
+
+    return success({ courses, total: data?.length || 0 });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return failure(500, coursesErrorCodes.fetchError, errorMessage);
