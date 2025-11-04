@@ -1,92 +1,250 @@
-이 프로젝트는 [`EasyNext`](https://github.com/easynext/easynext)를 사용해 생성된 [Next.js](https://nextjs.org) 프로젝트입니다.
+# Small LMS
 
-## Getting Started
+강사가 코스를 개설·운영하고, 학습자가 수강·과제 제출·피드백 수령까지 할 수 있는 경량 LMS(Learning Management System) 웹 애플리케이션입니다.
 
-개발 서버를 실행합니다.<br/>
-환경에 따른 명령어를 사용해주세요.
+## 🎯 핵심 목표
+
+1. **역할 기반 플로우의 정확한 가드**: Learner와 Instructor 역할에 따른 권한 관리
+2. **상태 기반 비즈니스 룰**: 마감/지각/재제출 등 상태 관리 로직 구현
+3. **문서 주도 개발**: Use Case 기반 개발 프로세스 적용
+
+## 🛠️ 기술 스택
+
+### Frontend
+- **Next.js 15** - App Router, Server Components, Middleware
+- **React 19** - UI 라이브러리
+- **TypeScript** - 타입 안정성
+- **Tailwind CSS** - 유틸리티 우선 스타일링
+- **Shadcn/ui** - UI 컴포넌트 라이브러리
+- **React Query** - 서버 상태 관리
+- **React Hook Form** - 폼 관리
+- **Zod** - 런타임 타입 검증
+
+### Backend
+- **Hono** - 경량 웹 프레임워크 (API 라우트)
+- **Supabase** - 인증 및 데이터베이스 (PostgreSQL)
+- **Supabase Auth** - 사용자 인증
+
+### 개발 도구
+- **Turbopack** - Next.js 번들러
+- **ESLint** - 코드 품질 검사
+- **TypeScript** - 타입 체크
+
+## 📋 주요 기능
+
+### 학습자 (Learner)
+- ✅ 코스 탐색 및 수강신청
+- ✅ 내 코스 관리 및 대시보드
+- ✅ 과제 제출 및 재제출
+- ✅ 성적 및 피드백 확인
+- ✅ 마감 임박 과제 알림
+
+### 강사 (Instructor)
+- ✅ 코스 생성 및 관리 (draft/published/archived)
+- ✅ 과제 생성 및 게시 (draft/published/closed)
+- ✅ 제출물 채점 및 피드백
+- ✅ 재제출 관리
+- ✅ 대시보드 (채점 대기, 최근 활동)
+
+## 🚀 시작하기
+
+### 사전 요구사항
+
+- Node.js 20 이상
+- npm, yarn, pnpm 또는 bun
+- Supabase 프로젝트 (로컬 또는 클라우드)
+
+### 설치
+
+```bash
+# 의존성 설치
+npm install
+
+# 환경 변수 설정
+cp .env.example .env.local
+# .env.local 파일에 Supabase URL과 Key를 입력하세요
+```
+
+### 개발 서버 실행
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-브라우저에서 [http://localhost:3000](http://localhost:3000)을 열어 결과를 확인할 수 있습니다.
+브라우저에서 [http://localhost:3000](http://localhost:3000)을 열어 확인할 수 있습니다.
 
-`app/page.tsx` 파일을 수정하여 페이지를 편집할 수 있습니다. 파일을 수정하면 자동으로 페이지가 업데이트됩니다.
+### 데이터베이스 마이그레이션
 
-## 기본 포함 라이브러리
+```bash
+# Supabase CLI 설치 (필요한 경우)
+npm install -g supabase
 
-- [Next.js](https://nextjs.org)
-- [React](https://react.dev)
-- [Tailwind CSS](https://tailwindcss.com)
-- [TypeScript](https://www.typescriptlang.org)
-- [ESLint](https://eslint.org)
-- [Prettier](https://prettier.io)
-- [Shadcn UI](https://ui.shadcn.com)
-- [Lucide Icon](https://lucide.dev)
-- [date-fns](https://date-fns.org)
-- [react-use](https://github.com/streamich/react-use)
-- [es-toolkit](https://github.com/toss/es-toolkit)
-- [Zod](https://zod.dev)
-- [React Query](https://tanstack.com/query/latest)
-- [React Hook Form](https://react-hook-form.com)
-- [TS Pattern](https://github.com/gvergnaud/ts-pattern)
+# 로컬 Supabase 시작
+npx supabase start
 
-## 사용 가능한 명령어
-
-한글버전 사용
-
-```sh
-easynext lang ko
+# 마이그레이션 적용
+npx supabase db push
 ```
 
-최신버전으로 업데이트
+## 📁 프로젝트 구조
 
-```sh
-npm i -g @easynext/cli@latest
-# or
-yarn add -g @easynext/cli@latest
-# or
-pnpm add -g @easynext/cli@latest
+```
+src/
+├── app/                          # Next.js App Router
+│   ├── (protected)/             # 인증 필요 페이지
+│   │   ├── dashboard/           # 학습자 대시보드
+│   │   ├── courses/             # 코스 목록 및 상세
+│   │   ├── my/                  # 내 코스 및 과제
+│   │   └── grades/              # 성적 페이지
+│   ├── api/                     # API 라우트 (Hono)
+│   ├── login/                   # 로그인 페이지
+│   └── signup/                  # 회원가입 페이지
+│
+├── backend/                      # 백엔드 설정
+│   ├── hono/                    # Hono 앱 설정
+│   ├── middleware/              # 미들웨어 (인증, 에러 처리)
+│   └── supabase/                # Supabase 클라이언트
+│
+├── features/                     # Feature-driven 아키텍처
+│   ├── auth/                    # 인증 및 온보딩
+│   ├── courses/                 # 코스 관리
+│   ├── enrollments/             # 수강신청
+│   ├── assignments/             # 과제 관리
+│   ├── learner-assignments/     # 학습자 과제 뷰
+│   ├── learner-submissions/     # 학습자 제출
+│   ├── submissions/             # 제출 관리
+│   ├── grades/                  # 성적 관리
+│   ├── dashboard/               # 학습자 대시보드
+│   └── instructor-dashboard/    # 강사 대시보드
+│       ├── backend/             # 백엔드 (route, service, schema, error)
+│       ├── components/          # React 컴포넌트
+│       └── hooks/               # React Query 훅
+│
+├── components/                   # 공통 UI 컴포넌트
+│   └── ui/                      # Shadcn/ui 컴포넌트
+│
+├── lib/                          # 유틸리티 및 공유 코드
+│   ├── shared/                  # 공유 타입 및 검증 스키마
+│   ├── supabase/                # Supabase 클라이언트 및 타입
+│   └── remote/                  # API 클라이언트
+│
+└── constants/                    # 상수 정의
+
+supabase/
+└── migrations/                   # 데이터베이스 마이그레이션
 ```
 
-Supabase 설정
+## 🏗️ 아키텍처
 
-```sh
-easynext supabase
+### Feature-driven Architecture
+
+각 기능은 독립적인 모듈로 구성되며, 다음 구조를 따릅니다:
+
+```
+src/features/[feature]/
+├── backend/
+│   ├── route.ts      # API 라우트 (Hono)
+│   ├── service.ts    # 비즈니스 로직
+│   ├── schema.ts     # Zod 검증 스키마
+│   └── error.ts      # 에러 정의
+├── components/       # React 컴포넌트
+├── hooks/           # React Query 훅
+└── types.ts         # TypeScript 타입
 ```
 
-Next-Auth 설정
+### 인증 플로우
 
-```sh
-easynext auth
+1. **Middleware**: `src/middleware.ts`에서 라우트 보호 및 리다이렉트 처리
+2. **Server Context**: 서버 컴포넌트에서 사용자 정보 로드
+3. **Client Context**: 클라이언트 컴포넌트에서 사용자 상태 제공
+4. **Protected Routes**: `(protected)` 레이아웃으로 인증 필요 페이지 보호
 
-# ID,PW 로그인
-easynext auth idpw
-# 카카오 로그인
-easynext auth kakao
+### API 구조
+
+- **Hono App**: `src/backend/hono/app.ts`에 중앙 집중식 라우트 등록
+- **미들웨어 스택**: 에러 처리 → 앱 컨텍스트 → Supabase 인증
+- **Feature Routes**: 각 기능이 `src/features/[feature]/backend/route.ts`에서 라우트 등록
+
+## 📝 사용 가능한 명령어
+
+```bash
+# 개발 서버 실행 (Turbopack)
+npm run dev
+
+# 프로덕션 빌드
+npm run build
+
+# 프로덕션 서버 실행
+npm run start
+
+# 린트 검사
+npm run lint
 ```
 
-유용한 서비스 연동
+## 🔐 환경 변수
 
-```sh
-# Google Analytics
-easynext gtag
+`.env.local` 파일에 다음 변수를 설정하세요:
 
-# Microsoft Clarity
-easynext clarity
-
-# ChannelIO
-easynext channelio
-
-# Sentry
-easynext sentry
-
-# Google Adsense
-easynext adsense
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
+
+## 🗄️ 데이터베이스
+
+PostgreSQL 데이터베이스 스키마는 `supabase/migrations/` 디렉토리에 마이그레이션 파일로 관리됩니다.
+
+### 주요 테이블
+
+- `profiles` - 사용자 프로필 (Supabase Auth와 연결)
+- `courses` - 코스 정보
+- `assignments` - 과제 정보
+- `enrollments` - 수강 등록
+- `submissions` - 과제 제출물
+- `categories` - 코스 카테고리
+- `difficulties` - 난이도 레벨
+
+자세한 스키마는 `docs/database.md`를 참고하세요.
+
+## 📚 문서
+
+- **PRD**: `docs/prd.md` - 제품 요구사항 문서
+- **Database**: `docs/database.md` - 데이터베이스 스키마
+- **Use Cases**: `docs/[번호]/spec.md` - 각 Use Case 명세서
+- **Architecture**: `CLAUDE.md` - 아키텍처 가이드
+- **Agents**: `AGENTS.md` - AI 에이전트 사용 가이드
+
+## 🧪 개발 패턴
+
+### Server Components 우선
+- 기본적으로 Server Components 사용
+- 클라이언트 상호작용이 필요한 경우에만 Client Components 사용 (`'use client'`)
+
+### 타입 안정성
+- Zod 스키마로 런타임 검증
+- TypeScript로 컴파일 타임 타입 체크
+- API 요청/응답 타입 일관성 유지
+
+### 에러 처리
+- 표준화된 에러 응답 형식
+- 타입 안전한 에러 코드
+- 클라이언트에서 에러 상태 처리
+
+## 🤝 기여하기
+
+1. 이 저장소를 포크합니다
+2. 기능 브랜치를 생성합니다 (`git checkout -b feature/amazing-feature`)
+3. 변경사항을 커밋합니다 (`git commit -m 'Add some amazing feature'`)
+4. 브랜치에 푸시합니다 (`git push origin feature/amazing-feature`)
+5. Pull Request를 생성합니다
+
+## 📄 라이선스
+
+이 프로젝트는 MIT 라이선스를 따릅니다.
+
+## 🔗 관련 링크
+
+- [Next.js 문서](https://nextjs.org/docs)
+- [Hono 문서](https://hono.dev)
+- [Supabase 문서](https://supabase.com/docs)
+- [Shadcn/ui 문서](https://ui.shadcn.com)
