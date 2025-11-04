@@ -1,16 +1,19 @@
 'use client';
 
 import { AssignmentDetail } from '@/features/assignments/components/assignment-detail';
+import { AssignmentSubmit } from '@/features/learner-submissions/components/assignment-submit';
 import type { AssignmentResponse } from '@/features/assignments/backend/schema';
 
 type LearnerAssignmentDetailProps = {
   assignment: AssignmentResponse;
+  courseId: number;
   isSubmitButtonDisabled?: boolean;
   onSubmit?: () => void;
 };
 
 export function LearnerAssignmentDetail({ 
-  assignment, 
+  assignment,
+  courseId,
   isSubmitButtonDisabled = false,
   onSubmit 
 }: LearnerAssignmentDetailProps) {
@@ -25,7 +28,7 @@ export function LearnerAssignmentDetail({
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <p className="text-sm text-blue-900">
             {canSubmit 
-              ? '아래 버튼을 클릭하여 과제를 제출하세요.' 
+              ? '아래에서 과제를 제출하세요.' 
               : '마감일이 지났으며, 지각 제출이 허용되지 않습니다.'}
           </p>
         </div>
@@ -39,15 +42,12 @@ export function LearnerAssignmentDetail({
         </div>
       )}
 
-      {canSubmit && onSubmit && (
-        <button
-          onClick={onSubmit}
-          disabled={isSubmitButtonDisabled}
-          className="w-full px-4 py-2 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors"
-        >
-          제출하기
-        </button>
-      )}
+      {/* Submission Component */}
+      <AssignmentSubmit
+        assignmentId={assignment.id}
+        courseId={courseId}
+        title={assignment.title}
+      />
     </div>
   );
 }

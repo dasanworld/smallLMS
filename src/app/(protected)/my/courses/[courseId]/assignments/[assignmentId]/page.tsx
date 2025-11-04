@@ -59,6 +59,7 @@ export default function LearnerAssignmentDetailPage({ params }: LearnerAssignmen
     <div className="max-w-4xl mx-auto px-6 py-8">
       <LearnerAssignmentDetail 
         assignment={assignment}
+        courseId={courseId}
         onSubmit={handleSubmit}
       />
     </div>

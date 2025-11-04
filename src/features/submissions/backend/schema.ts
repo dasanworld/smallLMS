@@ -11,6 +11,8 @@ export const SubmissionTableRowSchema = z.object({
   status: z.enum(['submitted', 'graded', 'resubmission_required']),
   score: z.number().nullable(),
   feedback: z.string().nullable(),
+  created_at: z.string(),
+  updated_at: z.string(),
 });
 
 export type SubmissionTableRow = z.infer<typeof SubmissionTableRowSchema>;
@@ -26,6 +28,8 @@ export const SubmissionResponseSchema = z.object({
   status: z.enum(['submitted', 'graded', 'resubmission_required']),
   score: z.number().nullable(),
   feedback: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
 });
 
 export type SubmissionResponse = z.infer<typeof SubmissionResponseSchema>;
