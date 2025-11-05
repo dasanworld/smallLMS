@@ -20,9 +20,7 @@ export default function FeedbackDetailPage({ params }: FeedbackDetailPageProps) 
     });
   }, [params]);
 
-  const { data, isLoading, error } = useSubmissionFeedbackQuery(submissionId, {
-    enabled: submissionId > 0,
-  });
+  const { data, isLoading, error } = useSubmissionFeedbackQuery(submissionId);
 
   return (
     <div className="min-h-screen bg-white">
