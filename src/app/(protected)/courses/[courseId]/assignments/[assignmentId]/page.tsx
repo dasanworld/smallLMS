@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { AssignmentDetail } from '@/features/assignments/components/assignment-detail';
 import { useAssignmentQuery } from '@/features/assignments/hooks/useAssignments';
+import { TopNav } from '@/components/top-nav';
 
 type AssignmentDetailPageProps = {
   params: Promise<{ assignmentId: string }>;
@@ -49,6 +50,8 @@ export default function AssignmentDetailPage({ params }: AssignmentDetailPagePro
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
+      <TopNav title="과제 상세" />
+      <div className="h-4" />
       <AssignmentDetail assignment={assignment} />
     </div>
   );

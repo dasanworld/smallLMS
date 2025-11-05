@@ -22,8 +22,8 @@ export function useAssignmentsByCourseQuery(courseId: number) {
   return useQuery({
     queryKey: ['assignments-by-course', courseId],
     queryFn: async () => {
-      const response = await axios.get<{ data: { assignments: AssignmentResponse[] } }>(`/api/courses/${courseId}/assignments`);
-      return response.data.data;
+      const response = await axios.get<{ assignments: AssignmentResponse[] }>(`/api/courses/${courseId}/assignments`);
+      return response.data ?? { assignments: [] };
     },
     enabled: courseId > 0,
   });
@@ -34,8 +34,8 @@ export function useCreateAssignmentMutation(courseId: number) {
 
   return useMutation({
     mutationFn: async (input: CreateAssignmentInput) => {
-      const response = await axios.post<{ data: AssignmentResponse }>(`/api/courses/${courseId}/assignments`, input);
-      return response.data.data;
+      const response = await axios.post<AssignmentResponse>(`/api/courses/${courseId}/assignments`, input);
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assignments-by-course', courseId] });
@@ -48,8 +48,8 @@ export function useUpdateAssignmentMutation(courseId: number) {
 
   return useMutation({
     mutationFn: async ({ assignmentId, input }: { assignmentId: number; input: UpdateAssignmentInput }) => {
-      const response = await axios.put<{ data: AssignmentResponse }>(`/api/courses/${courseId}/assignments/${assignmentId}`, input);
-      return response.data.data;
+      const response = await axios.put<AssignmentResponse>(`/api/courses/${courseId}/assignments/${assignmentId}`, input);
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assignments-by-course', courseId] });
@@ -62,8 +62,8 @@ export function useUpdateAssignmentStatusMutation(courseId: number) {
 
   return useMutation({
     mutationFn: async ({ assignmentId, status }: { assignmentId: number; status: 'draft' | 'published' | 'closed' }) => {
-      const response = await axios.patch<{ data: AssignmentResponse }>(`/api/courses/${courseId}/assignments/${assignmentId}/status`, { status });
-      return response.data.data;
+      const response = await axios.patch<AssignmentResponse>(`/api/courses/${courseId}/assignments/${assignmentId}/status`, { status });
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assignments-by-course', courseId] });
@@ -75,8 +75,8 @@ export function useAssignmentQuery(assignmentId: number) {
   return useQuery({
     queryKey: ['assignment', assignmentId],
     queryFn: async () => {
-      const response = await axios.get<{ data: AssignmentResponse }>(`/api/assignments/${assignmentId}`);
-      return response.data.data;
+      const response = await axios.get<AssignmentResponse>(`/api/assignments/${assignmentId}`);
+      return response.data;
     },
     enabled: assignmentId > 0,
   });

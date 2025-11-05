@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { AssignmentList } from '@/features/assignments/components/assignment-list';
 import { useAssignmentsByCourseQuery } from '@/features/assignments/hooks/useAssignments';
+import { TopNav } from '@/components/top-nav';
 
 type AssignmentListPageProps = {
   params: Promise<{ courseId: string }>;
@@ -53,7 +54,8 @@ export default function AssignmentListPage({ params }: AssignmentListPageProps) 
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
-      <h1 className="text-3xl font-bold text-slate-900 mb-6">과제</h1>
+      <TopNav title="과제" />
+      <div className="h-4" />
       <AssignmentList assignments={data?.assignments || []} courseId={courseId} />
     </div>
   );

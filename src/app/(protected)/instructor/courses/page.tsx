@@ -5,21 +5,30 @@ import { Plus } from 'lucide-react';
 import { useInstructorCoursesQuery } from '@/features/courses/hooks/useCourses';
 import { InstructorCourseList } from '@/features/courses/components/instructor-course-list';
 import { CreateCourseDialog } from '@/features/courses/components/create-course-dialog';
-import { RoleBadge } from '@/components/role-badge';
+import { TopNav } from '@/components/top-nav';
+import { useAuthenticatedRole } from '@/features/auth/hooks/useAuthenticatedRole';
 
 export default function InstructorCoursesPage() {
+  const { isLoading: roleLoading } = useAuthenticatedRole('instructor');
   const { data: coursesData, isLoading, error } = useInstructorCoursesQuery();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+  if (roleLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-slate-600">권한 확인 중...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-6xl mx-auto px-6 py-8">
-      <div className="flex justify-between items-start mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">코스 관리</h1>
-          <p className="text-slate-600 mt-2">강사님의 코스를 관리하세요</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <RoleBadge />
+      <TopNav
+        title="코스 관리"
+        actions={(
           <button
             onClick={() => setIsDialogOpen(true)}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -27,8 +36,9 @@ export default function InstructorCoursesPage() {
             <Plus className="w-4 h-4" />
             새 코스 만들기
           </button>
-        </div>
-      </div>
+        )}
+      />
+      <div className="h-4" />
 
       {isLoading && (
         <div className="flex justify-center py-12">

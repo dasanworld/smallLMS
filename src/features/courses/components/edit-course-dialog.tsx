@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { useUpdateCourseMutation, useCategoriesQuery, useDifficultiesQuery } from '@/features/courses/hooks/useCourses';
+import { useUpdateCourseMutation, useCategoriesQuery, useDifficultiesQuery, useInstructorCourseQuery } from '@/features/courses/hooks/useCourses';
 import type { CourseSummary } from '@/lib/shared/course-types';
 import type { UpdateCourseInput } from '@/features/courses/backend/service';
 
@@ -13,6 +13,8 @@ interface EditCourseDialogProps {
 }
 
 export function EditCourseDialog({ course, open, onOpenChange }: EditCourseDialogProps) {
+  // 코스 상세(커리큘럼 포함)를 조회하여 수정 폼에 채웁니다
+  const { data: courseDetail, isLoading: detailLoading, error: detailError } = useInstructorCourseQuery(course.id);
   const [formData, setFormData] = useState<UpdateCourseInput>({
     title: course.title,
     description: course.description || '',
@@ -27,16 +29,17 @@ export function EditCourseDialog({ course, open, onOpenChange }: EditCourseDialo
   const { data: difficulties = [] } = useDifficultiesQuery();
 
   useEffect(() => {
-    if (open) {
-      setFormData({
-        title: course.title,
-        description: course.description || '',
-        curriculum: '',
-        categoryId: course.categoryId || undefined,
-        difficultyId: course.difficultyId || undefined,
-      });
-    }
-  }, [open, course]);
+    if (!open) return;
+    // 다이얼로그가 열릴 때, 코스 상세가 있으면 상세값(커리큘럼 포함)으로 초기화
+    // 아직 로딩 중이면 기본 Summary 값으로 설정 후, 로딩 완료 시 상세로 갱신
+    setFormData({
+      title: courseDetail?.title ?? course.title,
+      description: courseDetail?.description ?? course.description ?? '',
+      curriculum: courseDetail?.curriculum ?? '',
+      categoryId: courseDetail?.categoryId ?? course.categoryId ?? undefined,
+      difficultyId: courseDetail?.difficultyId ?? course.difficultyId ?? undefined,
+    });
+  }, [open, course, courseDetail]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,9 +79,22 @@ export function EditCourseDialog({ course, open, onOpenChange }: EditCourseDialo
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* 상세 로딩 상태 안내 */}
+          {detailLoading && (
+            <div className="bg-slate-50 border border-slate-200 rounded p-3 text-slate-600 text-sm">
+              코스 정보를 불러오는 중입니다...
+            </div>
+          )}
+
           {error && (
             <div className="bg-red-50 border border-red-200 rounded p-3 text-red-700 text-sm">
               {error}
+            </div>
+          )}
+
+          {detailError && (
+            <div className="bg-amber-50 border border-amber-200 rounded p-3 text-amber-800 text-sm">
+              코스 상세 정보를 불러오지 못했습니다. 기본 정보로 편집할 수 있습니다.
             </div>
           )}
 

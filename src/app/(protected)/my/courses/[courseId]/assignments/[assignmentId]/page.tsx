@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { LearnerAssignmentDetail } from '@/features/learner-assignments/components/learner-assignment-detail';
 import { useLearnerAssignmentQuery } from '@/features/learner-assignments/hooks/useLearnerAssignments';
+import { TopNav } from '@/components/top-nav';
 
 type LearnerAssignmentDetailPageProps = {
   params: Promise<{ courseId: string; assignmentId: string }>;
@@ -57,7 +59,10 @@ export default function LearnerAssignmentDetailPage({ params }: LearnerAssignmen
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
-      <LearnerAssignmentDetail 
+      <TopNav title="과제 상세" />
+      <div className="h-4" />
+
+      <LearnerAssignmentDetail
         assignment={assignment}
         courseId={courseId}
         onSubmit={handleSubmit}

@@ -14,6 +14,7 @@ import { registerEnrollmentsRoutes } from "@/features/enrollments/backend/route"
 import { registerDashboardRoutes } from "@/features/dashboard/backend/route";
 import { registerGradesRoutes } from "@/features/grades/backend/route";
 import { registerInstructorDashboardRoutes } from "@/features/instructor-dashboard/backend/route";
+import { registerInstructorSubmissionsRoutes } from "@/features/instructor-submissions/backend/route";
 import { registerAdminRoutes } from "@/features/admin/backend/route";
 import type { AppEnv } from "@/backend/hono/context";
 
@@ -41,6 +42,7 @@ export const createHonoApp = () => {
   registerDashboardRoutes(app);
   registerGradesRoutes(app);
   registerInstructorDashboardRoutes(app);
+  registerInstructorSubmissionsRoutes(app);
   registerAdminRoutes(app);
   registerExampleRoutes(app);
 

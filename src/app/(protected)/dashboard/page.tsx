@@ -1,10 +1,13 @@
 'use client';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { DashboardOverview } from '@/features/dashboard/components/dashboard-overview';
 import { useLearnerDashboardQuery } from '@/features/dashboard/hooks/useLearnerDashboard';
 import { RoleBadge } from '@/components/role-badge';
 import { useAuthenticatedRole } from '@/features/auth/hooks/useAuthenticatedRole';
 import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser';
+import { useUserRole } from '@/features/auth/hooks/useUserRole';
 
 type DashboardPageProps = {
   params: Promise<Record<string, never>>;
@@ -13,11 +16,25 @@ type DashboardPageProps = {
 export default function DashboardPage({ params }: DashboardPageProps) {
   void params;
 
+  const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useCurrentUser();
-  const { isLoading: roleLoading } = useAuthenticatedRole('learner');
+  const { role, isLoading: roleLoading } = useUserRole();
+  const { isLoading: learnerRoleLoading } = useAuthenticatedRole('learner');
   const { data, isLoading: dashboardLoading, error } = useLearnerDashboardQuery();
 
-  // 인증 확인 중이거나 인증되지 않은 경우
+  useEffect(() => {
+    if (!roleLoading && role) {
+      if (role === 'instructor') {
+        router.replace('/instructor/dashboard');
+        return;
+      }
+      if (role === 'operator') {
+        router.replace('/admin');
+        return;
+      }
+    }
+  }, [role, roleLoading, router]);
+
   if (authLoading || !isAuthenticated) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -40,7 +57,17 @@ export default function DashboardPage({ params }: DashboardPageProps) {
     );
   }
 
-  // API 오류가 발생한 경우
+  if (learnerRoleLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-slate-600">권한 확인 중...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (error) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">

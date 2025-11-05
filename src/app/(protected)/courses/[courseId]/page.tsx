@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { CourseDetailComponent } from '@/features/courses/components/course-detail';
 import { EnrollmentButton } from '@/features/enrollments/components/enrollment-button';
@@ -68,6 +69,15 @@ export default function CourseDetailPage({ params }: CourseDetailPageProps) {
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">
+      <nav className="mb-6">
+        <Link
+          href="/courses"
+          className="text-blue-600 hover:text-blue-700 text-sm"
+        >
+          ← 코스 목록으로 돌아가기
+        </Link>
+      </nav>
+
       <CourseDetailComponent course={course}>
         <EnrollmentButton
           courseId={courseId}

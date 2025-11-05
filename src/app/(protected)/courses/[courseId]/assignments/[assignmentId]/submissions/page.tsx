@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, CheckCircle, Clock, AlertCircle, Loader2 } from 'lucide-react';
+import { CheckCircle, Clock, AlertCircle, Loader2 } from 'lucide-react';
+import { TopNav } from '@/components/top-nav';
 import { useQuery } from '@tanstack/react-query';
 
 type SubmissionsPageProps = {
@@ -99,13 +100,8 @@ export default function SubmissionsPage({ params }: SubmissionsPageProps) {
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-8">
-      <Link
-        href={`/courses/${courseId}/assignments/${assignmentId}`}
-        className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-6"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        과제로 돌아가기
-      </Link>
+      <TopNav title="제출물 목록" />
+      <div className="h-4" />
 
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-slate-900">제출물 목록</h1>
