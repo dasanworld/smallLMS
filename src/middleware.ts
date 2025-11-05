@@ -37,14 +37,14 @@ export async function middleware(request: NextRequest) {
 
   const supabase = createServerClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
     cookies: {
-      getAll() {
-        return request.cookies.getAll();
+      get(name: string) {
+        return request.cookies.get(name)?.value;
       },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value, options }) => {
-          request.cookies.set({ name, value, ...options });
-          response.cookies.set({ name, value, ...options });
-        });
+      set(name: string, value: string, options?: Parameters<typeof response.cookies.set>[1]) {
+        response.cookies.set({ name, value, ...(options || {}) });
+      },
+      remove(name: string, options?: Parameters<typeof response.cookies.set>[1]) {
+        response.cookies.set({ name, value: '', ...(options || {}), maxAge: 0 });
       },
     },
   });
@@ -73,14 +73,14 @@ export async function middleware(request: NextRequest) {
         // 대시보드 페이지 접근 시 역할에 따라 리다이렉트
         const supabaseAuth = createServerClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
           cookies: {
-            getAll() {
-              return request.cookies.getAll();
+            get(name: string) {
+              return request.cookies.get(name)?.value;
             },
-            setAll(cookiesToSet) {
-              cookiesToSet.forEach(({ name, value, options }) => {
-                request.cookies.set({ name, value, ...options });
-                response.cookies.set({ name, value, ...options });
-              });
+            set(name: string, value: string, options?: Parameters<typeof response.cookies.set>[1]) {
+              response.cookies.set({ name, value, ...(options || {}) });
+            },
+            remove(name: string, options?: Parameters<typeof response.cookies.set>[1]) {
+              response.cookies.set({ name, value: '', ...(options || {}), maxAge: 0 });
             },
           },
         });
