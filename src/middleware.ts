@@ -27,12 +27,24 @@ const copyCookies = (from: NextResponse, to: NextResponse) => {
 
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next({ request });
+  const pathname = request.nextUrl.pathname;
+
+  // 공용 경로는 미들웨어 인증 로직을 건너뜁니다(성능/안정성).
+  // 실제 보호는 shouldProtectPath가 true인 경우에만 수행합니다.
+  // 루트('/'), 로그인/회원가입 등은 즉시 통과시켜 초기 500을 예방합니다.
+  if (!shouldProtectPath(pathname)) {
+    return response;
+  }
 
   // Edge(Middleware) 환경에서 환경변수가 누락되면 즉시 통과시켜 500을 방지합니다.
   const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    return response;
+    // 환경변수가 없는 경우에도 보호 경로에서는 로그인으로 유도하여 500을 방지
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = LOGIN_PATH;
+    loginUrl.searchParams.set("redirectedFrom", pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
   const supabase = createServerClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -52,74 +64,16 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const decision = match({ user, pathname: request.nextUrl.pathname })
-    .when(
-      ({ user: currentUser, pathname }) =>
-        !currentUser && shouldProtectPath(pathname),
-      ({ pathname }) => {
-        const loginUrl = request.nextUrl.clone();
-        loginUrl.pathname = LOGIN_PATH;
-        loginUrl.searchParams.set("redirectedFrom", pathname);
+  // 보호 경로인데 사용자 없으면 로그인으로 리다이렉트
+  if (!user) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = LOGIN_PATH;
+    loginUrl.searchParams.set("redirectedFrom", pathname);
+    return copyCookies(response, NextResponse.redirect(loginUrl));
+  }
 
-        return copyCookies(response, NextResponse.redirect(loginUrl));
-      }
-    )
-    .when(
-      ({ user: currentUser, pathname }) =>
-        currentUser && 
-        (pathname === "/dashboard" || pathname === "/instructor/dashboard" || pathname === "/admin"),
-      async ({ user: currentUser, pathname }) => {
-        // 대시보드 페이지 접근 시 역할에 따라 리다이렉트
-        const supabaseAuth = createServerClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
-          cookies: {
-            getAll() {
-              return request.cookies.getAll();
-            },
-            setAll(cookiesToSet) {
-              cookiesToSet.forEach(({ name, value, options }) => {
-                response.cookies.set({ name, value, ...(options || {}) });
-              });
-            },
-          },
-        });
-
-        const { data: profile, error: profileError } = await supabaseAuth
-          .from("profiles")
-          .select("role")
-          .eq("id", currentUser.id)
-          .single<{ role: string }>();
-
-        if (profileError || !profile) {
-          return response;
-        }
-
-        const role = profile.role;
-
-        // 현재 경로와 역할이 맞지 않으면 리다이렉트
-        if (role === "learner" && pathname !== "/dashboard") {
-          const redirectUrl = request.nextUrl.clone();
-          redirectUrl.pathname = "/dashboard";
-          return copyCookies(response, NextResponse.redirect(redirectUrl));
-        }
-
-        if (role === "instructor" && pathname !== "/instructor/dashboard") {
-          const redirectUrl = request.nextUrl.clone();
-          redirectUrl.pathname = "/instructor/dashboard";
-          return copyCookies(response, NextResponse.redirect(redirectUrl));
-        }
-
-        if (role === "operator" && pathname !== "/admin") {
-          const redirectUrl = request.nextUrl.clone();
-          redirectUrl.pathname = "/admin";
-          return copyCookies(response, NextResponse.redirect(redirectUrl));
-        }
-
-        return response;
-      }
-    )
-    .otherwise(() => response);
-
-  return decision;
+  // 역할 기반 리다이렉트는 페이지 레벨에서 처리(미들웨어 안정성/성능)
+  return response;
 }
 
 export const config = {
