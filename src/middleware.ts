@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import type { Database } from "@/lib/supabase/types";
-import { env } from "@/constants/env";
 import {
   LOGIN_PATH,
   isAuthEntryPath,
@@ -29,23 +28,26 @@ const copyCookies = (from: NextResponse, to: NextResponse) => {
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next({ request });
 
-  const supabase = createServerClient<Database>(
-    env.NEXT_PUBLIC_SUPABASE_URL,
-    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            request.cookies.set({ name, value, ...options });
-            response.cookies.set({ name, value, ...options });
-          });
-        },
+  // Edge(Middleware) 환경에서 환경변수가 누락되면 즉시 통과시켜 500을 방지합니다.
+  const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    return response;
+  }
+
+  const supabase = createServerClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
       },
-    }
-  );
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) => {
+          request.cookies.set({ name, value, ...options });
+          response.cookies.set({ name, value, ...options });
+        });
+      },
+    },
+  });
 
   const {
     data: { user },
@@ -69,23 +71,19 @@ export async function middleware(request: NextRequest) {
         (pathname === "/dashboard" || pathname === "/instructor/dashboard" || pathname === "/admin"),
       async ({ user: currentUser, pathname }) => {
         // 대시보드 페이지 접근 시 역할에 따라 리다이렉트
-        const supabaseAuth = createServerClient<Database>(
-          env.NEXT_PUBLIC_SUPABASE_URL,
-          env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-          {
-            cookies: {
-              getAll() {
-                return request.cookies.getAll();
-              },
-              setAll(cookiesToSet) {
-                cookiesToSet.forEach(({ name, value, options }) => {
-                  request.cookies.set({ name, value, ...options });
-                  response.cookies.set({ name, value, ...options });
-                });
-              },
+        const supabaseAuth = createServerClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
+          cookies: {
+            getAll() {
+              return request.cookies.getAll();
             },
-          }
-        );
+            setAll(cookiesToSet) {
+              cookiesToSet.forEach(({ name, value, options }) => {
+                request.cookies.set({ name, value, ...options });
+                response.cookies.set({ name, value, ...options });
+              });
+            },
+          },
+        });
 
         const { data: profile, error: profileError } = await supabaseAuth
           .from("profiles")
