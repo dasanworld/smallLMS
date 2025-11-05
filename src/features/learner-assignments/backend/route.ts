@@ -1,10 +1,38 @@
 import { Hono } from 'hono';
 import { failure, respond, type ErrorResult } from '@/backend/http/response';
 import { getLogger, getSupabase, type AppEnv } from '@/backend/hono/context';
-import { getLearnerAssignmentsByCourse, getLearnerAssignmentDetail } from '@/features/learner-assignments/backend/service';
+import { getLearnerAssignmentsByCourse, getLearnerAssignmentDetail, getLearnerAssignmentsAll } from '@/features/learner-assignments/backend/service';
 import { learnerAssignmentsErrorCodes, type LearnerAssignmentsServiceError } from '@/features/learner-assignments/backend/error';
 
 export const registerLearnerAssignmentsRoutes = (app: Hono<AppEnv>) => {
+  app.get('/api/learner/assignments', async (c) => {
+    const supabase = getSupabase(c);
+    const logger = getLogger(c);
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return respond(c, failure(401, learnerAssignmentsErrorCodes.unauthorized, 'User not authenticated'));
+    }
+
+    logger.info('[LearnerAssignments] Fetch all assignments start', { userId: user.id });
+    const result = await getLearnerAssignmentsAll(supabase, user.id);
+
+    if (!result.ok) {
+      const errorResult = result as ErrorResult<LearnerAssignmentsServiceError, unknown>;
+      logger.error('[LearnerAssignments] Failed to fetch', {
+        code: errorResult.error.code,
+        message: errorResult.error.message,
+        userId: user.id,
+      });
+    }
+    if (result.ok) {
+      logger.info('[LearnerAssignments] Success', {
+        count: result.data.assignments.length,
+        sample: result.data.assignments.slice(0, 2),
+      });
+    }
+    return respond(c, result);
+  });
   app.get('/api/learner/courses/:courseId/assignments', async (c) => {
     const supabase = getSupabase(c);
     const logger = getLogger(c);

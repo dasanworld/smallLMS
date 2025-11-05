@@ -66,18 +66,31 @@ export const getLearnerDashboard = async (
 
     const courseProgress = enrolledCourses.map((course) => {
       const courseAssignments = assignments.filter((a) => a.courseId === course.id);
-      const courseSubmissions = submissions.filter((s) =>
-        courseAssignments.some((a) => a.id === s.assignmentId && s.status === 'graded')
-      );
+      const courseAssignmentIds = new Set(courseAssignments.map((a) => a.id));
+
+      // 제출: 해당 코스 과제에 대해 학습자가 제출한 과제 수(중복 과제ID 제거)
+      const submittedAssignmentIdSet = new Set<number>();
+      // 완료: 채점 완료(graded)된 제출 수(중복 과제ID 제거)
+      const completedAssignmentIdSet = new Set<number>();
+
+      for (const s of submissions) {
+        if (!courseAssignmentIds.has(s.assignmentId)) continue;
+        submittedAssignmentIdSet.add(s.assignmentId);
+        if (s.status === 'graded') {
+          completedAssignmentIdSet.add(s.assignmentId);
+        }
+      }
 
       const total = courseAssignments.length;
-      const completed = courseSubmissions.length;
+      const submitted = submittedAssignmentIdSet.size;
+      const completed = completedAssignmentIdSet.size;
       const percentage = calculateProgress(completed, total);
 
       return {
         courseId: course.id,
         courseTitle: course.title,
         progressPercentage: percentage,
+        submittedAssignments: submitted,
         completedAssignments: completed,
         totalAssignments: total,
       };

@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import { useQueries } from '@tanstack/react-query';
+import axios from 'axios';
 import { CourseList } from '@/features/courses/components/course-list';
 import { CourseFilters } from '@/features/courses/components/course-filters';
 import { useCoursesQuery, useCategoriesQuery, useDifficultiesQuery } from '@/features/courses/hooks/useCourses';
 import { useEnrollmentStatusQuery } from '@/features/enrollments/hooks/useEnrollments';
-import { RoleBadge } from '@/components/role-badge';
+import { TopNav } from '@/components/top-nav';
 import type { CourseListParams } from '@/lib/shared/course-types';
 
 export default function CoursesPage() {
@@ -16,23 +18,25 @@ export default function CoursesPage() {
   const { data: difficulties } = useDifficultiesQuery();
 
   const courses = courseData?.courses || [];
+  // 각 코스의 수강 상태를 병렬로 조회 (Hook 규칙 준수: useQueries는 단일 Hook 호출)
+  const enrollmentResults = useQueries({
+    queries: courses.map((course) => ({
+      queryKey: ['enrollment-status', course.id],
+      queryFn: async () => {
+        const res = await axios.get<{ isEnrolled: boolean }>(`/api/enrollments/${course.id}/status`);
+        return res.data ?? { isEnrolled: false };
+      },
+      enabled: course.id > 0,
+    })),
+  });
   const enrolledCourseIds = courses
-    .filter((course) => {
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      const { data } = useEnrollmentStatusQuery(course.id);
-      return data?.isEnrolled;
-    })
+    .filter((course, idx) => enrollmentResults[idx]?.data?.isEnrolled)
     .map((c) => c.id);
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">
-      <header className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">코스 카탈로그</h1>
-          <p className="text-slate-600">원하는 코스를 찾아 수강신청하세요</p>
-        </div>
-        <RoleBadge />
-      </header>
+      <TopNav title="코스 카탈로그" />
+      <div className="h-6" />
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-1">

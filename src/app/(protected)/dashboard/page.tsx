@@ -8,6 +8,10 @@ import { RoleBadge } from '@/components/role-badge';
 import { useAuthenticatedRole } from '@/features/auth/hooks/useAuthenticatedRole';
 import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser';
 import { useUserRole } from '@/features/auth/hooks/useUserRole';
+import { LearnerNav } from '@/features/learner-dashboard/components/learner-nav';
+import { QuickActions } from '@/features/learner-dashboard/components/quick-actions';
+import { RotateCw } from 'lucide-react';
+import { LogoutButton } from '@/components/logout-button';
 
 type DashboardPageProps = {
   params: Promise<Record<string, never>>;
@@ -20,7 +24,7 @@ export default function DashboardPage({ params }: DashboardPageProps) {
   const { isAuthenticated, isLoading: authLoading } = useCurrentUser();
   const { role, isLoading: roleLoading } = useUserRole();
   const { isLoading: learnerRoleLoading } = useAuthenticatedRole('learner');
-  const { data, isLoading: dashboardLoading, error } = useLearnerDashboardQuery();
+  const { data, isLoading: dashboardLoading, error, refetch, isFetching } = useLearnerDashboardQuery();
 
   useEffect(() => {
     if (!roleLoading && role) {
@@ -37,7 +41,7 @@ export default function DashboardPage({ params }: DashboardPageProps) {
 
   if (authLoading || !isAuthenticated) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-2 text-slate-600">인증 확인 중...</p>
@@ -48,7 +52,7 @@ export default function DashboardPage({ params }: DashboardPageProps) {
 
   if (roleLoading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-2 text-slate-600">권한 확인 중...</p>
@@ -59,7 +63,7 @@ export default function DashboardPage({ params }: DashboardPageProps) {
 
   if (learnerRoleLoading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-2 text-slate-600">권한 확인 중...</p>
@@ -70,7 +74,7 @@ export default function DashboardPage({ params }: DashboardPageProps) {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <div className="text-red-600 text-lg font-semibold mb-2">데이터를 불러올 수 없습니다</div>
           <p className="text-slate-600">잠시 후 다시 시도해주세요.</p>
@@ -80,7 +84,8 @@ export default function DashboardPage({ params }: DashboardPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-slate-50">
+      <LearnerNav />
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -89,8 +94,26 @@ export default function DashboardPage({ params }: DashboardPageProps) {
             </h1>
             <p className="text-slate-600 mt-2">수강 중인 코스와 과제 현황을 확인하세요</p>
           </div>
-          <RoleBadge />
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => void refetch()}
+              disabled={isFetching}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+              title="새로고침"
+            >
+              <RotateCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
+              <span className="text-sm">{isFetching ? '새로고침 중...' : '새로고침'}</span>
+            </button>
+            {/* 대시보드 상단 우측에 로그아웃 버튼 제공 */}
+            <LogoutButton />
+            <RoleBadge />
+          </div>
         </div>
+
+        {/* Quick Actions Section */}
+        <QuickActions />
+
+        {/* Dashboard Overview */}
         <DashboardOverview data={data || { courses: [], upcomingAssignments: [], recentFeedback: [] }} isLoading={dashboardLoading} />
       </div>
     </div>

@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { CourseDetailComponent } from '@/features/courses/components/course-detail';
 import { EnrollmentButton } from '@/features/enrollments/components/enrollment-button';
 import { useCourseQuery } from '@/features/courses/hooks/useCourses';
+import { TopNav } from '@/components/top-nav';
 import { useEnrollmentStatusQuery, useCreateEnrollmentMutation, useCancelEnrollmentMutation } from '@/features/enrollments/hooks/useEnrollments';
 
 type CourseDetailPageProps = {
@@ -69,14 +69,8 @@ export default function CourseDetailPage({ params }: CourseDetailPageProps) {
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">
-      <nav className="mb-6">
-        <Link
-          href="/courses"
-          className="text-blue-600 hover:text-blue-700 text-sm"
-        >
-          ← 코스 목록으로 돌아가기
-        </Link>
-      </nav>
+      <TopNav title="코스 상세" />
+      <div className="h-6" />
 
       <CourseDetailComponent course={course}>
         <EnrollmentButton

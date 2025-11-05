@@ -17,8 +17,6 @@ const mapRowToSubmissionResponse = (row: any): SubmissionResponse => ({
   status: row.status,
   score: row.score,
   feedback: row.feedback,
-  createdAt: row.created_at,
-  updatedAt: row.updated_at,
 });
 
 export const getSubmissionsByLearner = async (
@@ -64,8 +62,8 @@ export const getRecentFeedbackByLearner = async (
       .select('*')
       .eq('user_id', userId)
       .eq('status', 'graded')
-      .gte('updated_at', sinceDate.toISOString())
-      .order('updated_at', { ascending: false });
+      .gte('submitted_at', sinceDate.toISOString())
+      .order('submitted_at', { ascending: false });
 
     if (error) {
       return failure(500, submissionsErrorCodes.fetchError, error.message);
@@ -209,9 +207,7 @@ export const updateSubmission = async (
   },
 ): Promise<HandlerResult<SubmissionResponse, SubmissionsServiceError, unknown>> => {
   try {
-    const updateData: any = {
-      updated_at: new Date().toISOString(),
-    };
+    const updateData: any = {};
 
     if (data.contentText !== undefined) updateData.content_text = data.contentText;
     if (data.contentLink !== undefined) updateData.content_link = data.contentLink;

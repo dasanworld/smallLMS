@@ -18,12 +18,9 @@ export const useLearnerAssignmentsByCourseQuery = (courseId: number) => {
         throw new Error(`Failed to fetch learner assignments: ${response.statusText}`);
       }
 
-      const json = await response.json();
-      if (!json.ok) {
-        throw new Error(json.error?.message || 'Failed to fetch learner assignments');
-      }
-
-      return json.data;
+      const data = await response.json();
+      // 서버는 성공 시 data만 반환하므로 그대로 사용
+      return (data ?? { assignments: [] }) as AssignmentListResponse;
     },
   });
 };
@@ -44,12 +41,34 @@ export const useLearnerAssignmentQuery = (courseId: number, assignmentId: number
         throw new Error(`Failed to fetch learner assignment: ${response.statusText}`);
       }
 
-      const json = await response.json();
-      if (!json.ok) {
-        throw new Error(json.error?.message || 'Failed to fetch learner assignment');
-      }
+      const data = await response.json();
+      // 성공 시 data만 반환
+      return data as AssignmentResponse;
+    },
+  });
+};
 
-      return json.data;
+export type LearnerAssignmentListItem = {
+  id: number;
+  courseId: number;
+  courseTitle: string;
+  title: string;
+  dueDate: string | null;
+  status: 'draft' | 'published' | 'closed';
+};
+
+export const useLearnerAssignmentsAllQuery = () => {
+  return useQuery({
+    queryKey: [...LEARNER_ASSIGNMENTS_QUERY_KEY, 'all'],
+    queryFn: async (): Promise<{ assignments: LearnerAssignmentListItem[] }> => {
+      const response = await fetch(`/api/learner/assignments`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch learner assignments`);
+      }
+      const data = await response.json();
+      // 성공 시 data만 반환
+      const parsed = (data ?? { assignments: [] }) as { assignments: LearnerAssignmentListItem[] };
+      return parsed.assignments ? parsed : { assignments: [] };
     },
   });
 };

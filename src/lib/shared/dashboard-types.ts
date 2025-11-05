@@ -2,6 +2,7 @@ export interface CourseProgress {
   courseId: number;
   courseTitle: string;
   progressPercentage: number;
+  submittedAssignments: number;
   completedAssignments: number;
   totalAssignments: number;
 }

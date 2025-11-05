@@ -5,6 +5,7 @@ import { DashboardOverview } from '@/features/instructor-dashboard/components/da
 import { RoleBadge } from '@/components/role-badge';
 import { useAuthenticatedRole } from '@/features/auth/hooks/useAuthenticatedRole';
 import { BookOpen, FileText, CheckCircle, User, Home } from 'lucide-react';
+import { LogoutButton } from '@/components/logout-button';
 
 type InstructorDashboardPageProps = {
   params: Promise<Record<string, never>>;
@@ -36,7 +37,10 @@ export default function InstructorDashboardPage({ params }: InstructorDashboardP
               <div className="h-4 w-px bg-slate-300" />
               <span className="text-sm text-slate-500">강사 대시보드</span>
             </div>
-            <RoleBadge />
+            <div className="flex items-center gap-3">
+              <LogoutButton />
+              <RoleBadge />
+            </div>
           </div>
         </div>
       </nav>

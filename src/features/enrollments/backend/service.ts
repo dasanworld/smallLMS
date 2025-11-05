@@ -84,7 +84,12 @@ export const cancelEnrollment = async (
     }
 
     if (!enrollment) {
-      return failure(404, enrollmentsErrorCodes.notEnrolled, 'Enrollment not found');
+      // DELETE는 멱등성이 보장되어야 하므로, 이미 미수강 상태인 경우에도 성공으로 처리
+      const response: EnrollmentResponse = {
+        success: true,
+        message: 'Already not enrolled',
+      };
+      return success(response);
     }
 
     const { error: deleteError } = await client

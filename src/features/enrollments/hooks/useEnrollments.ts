@@ -35,8 +35,8 @@ export function useEnrollmentStatusQuery(courseId: number, enabled = true) {
   return useQuery({
     queryKey: ['enrollment-status', courseId],
     queryFn: async () => {
-      const response = await axios.get<{ data: EnrollmentStatus }>(`/api/enrollments/${courseId}/status`);
-      return response.data.data;
+      const response = await axios.get<EnrollmentStatus>(`/api/enrollments/${courseId}/status`);
+      return response.data ?? { isEnrolled: false };
     },
     enabled: enabled && courseId > 0,
   });

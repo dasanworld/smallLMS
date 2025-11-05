@@ -4,6 +4,7 @@ export const CourseProgressSchema = z.object({
   courseId: z.number(),
   courseTitle: z.string(),
   progressPercentage: z.number(),
+  submittedAssignments: z.number(),
   completedAssignments: z.number(),
   totalAssignments: z.number(),
 });

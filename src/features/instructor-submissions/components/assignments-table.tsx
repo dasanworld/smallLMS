@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Edit2, Eye, MoreVertical } from 'lucide-react';
 import type { InstructorAssignmentWithStats } from '../hooks/useInstructorAssignmentsQuery';
 import { EditAssignmentDialog } from './edit-assignment-dialog';
+import { useQueryClient } from '@tanstack/react-query';
 
 type AssignmentsTableProps = {
   assignments: InstructorAssignmentWithStats[];
@@ -39,6 +40,35 @@ function getStatusColor(status: string) {
 
 export function AssignmentsTable({ assignments, isLoading }: AssignmentsTableProps) {
   const [editing, setEditing] = useState<{ assignmentId: number; courseId: number } | null>(null);
+  const [busyId, setBusyId] = useState<number | null>(null);
+  const queryClient = useQueryClient();
+
+  const togglePublish = async (assignment: InstructorAssignmentWithStats) => {
+    if (assignment.status === 'closed') return; // 마감된 과제는 변경 불가
+    const nextStatus = assignment.status === 'published' ? 'draft' : 'published';
+    try {
+      setBusyId(assignment.id);
+      const res = await fetch(`/api/courses/${assignment.courseId}/assignments/${assignment.id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+      if (!res.ok) {
+        throw new Error('Failed to update status');
+      }
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['instructorAssignments'] }),
+        queryClient.invalidateQueries({ queryKey: ['instructorAssignments', assignment.courseId] }),
+        queryClient.invalidateQueries({ queryKey: ['assignments-by-course', assignment.courseId] }),
+      ]);
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('[AssignmentsTable] togglePublish error', e);
+      alert('상태 변경 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+    } finally {
+      setBusyId(null);
+    }
+  };
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">
@@ -105,6 +135,23 @@ export function AssignmentsTable({ assignments, isLoading }: AssignmentsTablePro
                     type="button"
                   >
                     <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => void togglePublish(assignment)}
+                    disabled={busyId === assignment.id || assignment.status === 'closed'}
+                    className={`${
+                      assignment.status === 'published'
+                        ? 'px-2 py-1 rounded-lg border border-amber-300 text-amber-700 hover:bg-amber-50 disabled:opacity-60'
+                        : 'px-2 py-1 rounded-lg border border-green-300 text-green-700 hover:bg-green-50 disabled:opacity-60'
+                    }`}
+                    title={assignment.status === 'published' ? '비공개 전환' : '공개 전환'}
+                    type="button"
+                  >
+                    {busyId === assignment.id
+                      ? '처리 중...'
+                      : assignment.status === 'published'
+                        ? '비공개'
+                        : '공개'}
                   </button>
                   <Link
                     href={`/courses/${assignment.courseId}/assignments/${assignment.id}/submissions`}
