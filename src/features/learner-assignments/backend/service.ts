@@ -106,27 +106,23 @@ export const getLearnerAssignmentsAll = async (
   userId: string,
 ): Promise<HandlerResult<{ assignments: Array<{ id: number; courseId: number; courseTitle: string; title: string; dueDate: string | null; status: 'draft' | 'published' | 'closed' }> }, LearnerAssignmentsServiceError, unknown>> => {
   try {
-    // 수강 중인 코스 조회
-    console.log('[getLearnerAssignmentsAll] user:', userId);
+    // 수강 중인 코스를 조회한 뒤, 각 코스의 공개(published) 및 마감(closed) 상태 과제를 합쳐 학습자용 목록을 구성합니다.
+    // 주의: 디버깅용 콘솔 출력은 제거하고, 핵심 처리 단계는 주석으로 설명합니다.
     const coursesResult = await getCoursesByLearner(client, userId);
     if (!coursesResult.ok) {
-      console.error('[getLearnerAssignmentsAll] courses error', coursesResult);
       return coursesResult as any;
     }
     const courses = coursesResult.data.courses;
-    console.log('[getLearnerAssignmentsAll] enrolled courses:', courses.length);
     if (courses.length === 0) {
       return success({ assignments: [] });
     }
     const courseIds = courses.map((c) => c.id);
-    console.log('[getLearnerAssignmentsAll] courseIds:', courseIds);
 
     // 코스들의 공개 과제 조회 ('published' + 'closed' 병합)
     const publishedRes = await getAssignmentsByCourses(client, courseIds, 'published');
     const closedRes = await getAssignmentsByCourses(client, courseIds, 'closed');
 
     if (!publishedRes.ok && !closedRes.ok) {
-      console.error('[getLearnerAssignmentsAll] assignments error', { publishedRes, closedRes });
       return (publishedRes as any);
     }
 
@@ -137,16 +133,6 @@ export const getLearnerAssignmentsAll = async (
       ...(publishedRes.ok ? publishedRes.data.assignments : []),
       ...(closedRes.ok ? closedRes.data.assignments : []),
     ];
-    if (publishedRes.ok) {
-      console.log('[getLearnerAssignmentsAll] published count:', publishedRes.data.assignments.length);
-    } else {
-      console.error('[getLearnerAssignmentsAll] published error');
-    }
-    if (closedRes.ok) {
-      console.log('[getLearnerAssignmentsAll] closed count:', closedRes.data.assignments.length);
-    } else {
-      console.error('[getLearnerAssignmentsAll] closed error');
-    }
     // 과제 ID로 중복 제거
     const seen = new Set<number>();
     const assignments = merged
@@ -163,21 +149,9 @@ export const getLearnerAssignmentsAll = async (
         dueDate: a.dueDate ?? null,
         status: a.status,
       }));
-
-    console.log('[getLearnerAssignmentsAll] assignments count:', assignments.length);
-    if (assignments.length === 0) {
-      // 추가 디버그: draft 상태 과제 유무 확인 (출력만, 응답에는 포함하지 않음)
-      const draftRes = await getAssignmentsByCourses(client, courseIds, 'draft');
-      if (draftRes.ok) {
-        console.log('[getLearnerAssignmentsAll][debug] draft assignments count:', draftRes.data.assignments.length);
-      } else {
-        console.error('[getLearnerAssignmentsAll][debug] draft query error', draftRes);
-      }
-    }
     return success({ assignments });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[getLearnerAssignmentsAll] exception', errorMessage);
     return failure(500, learnerAssignmentsErrorCodes.fetchError, errorMessage);
   }
 };

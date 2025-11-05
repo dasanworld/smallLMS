@@ -51,11 +51,8 @@ export default function AssignmentsPage({ params }: AssignmentsPageProps) {
 function AssignmentsListContent() {
   const { data, isLoading, error, refetch, isFetching } = useLearnerAssignmentsAllQuery();
   const assignments = data?.assignments ?? [];
-  // 디버깅: 브라우저 콘솔에서 데이터 흐름 확인
-  if (typeof window !== 'undefined') {
-    // eslint-disable-next-line no-console
-    console.log('[my/assignments] fetched assignments', { count: assignments.length, sample: assignments.slice(0, 3) });
-  }
+  // 주의: 데이터는 React Query를 통해 관리되며, 브라우저 콘솔 출력은 사용하지 않습니다.
+  // UI는 빈 배열/로딩/에러 상태에 따라 적절히 분기합니다.
 
   if (isLoading) {
     return (

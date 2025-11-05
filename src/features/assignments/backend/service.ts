@@ -132,7 +132,7 @@ export const createAssignment = async (
   input: CreateAssignmentInput,
 ): Promise<HandlerResult<AssignmentResponse, AssignmentsServiceError, unknown>> => {
   try {
-    console.log(`[createAssignment] Creating assignment for course ${courseId}`);
+    // 새 과제는 기본적으로 'draft' 상태로 생성됩니다. 이후 상태 변경 API를 통해 게시/마감이 가능합니다.
 
     if (!input.title?.trim()) {
       return failure(400, assignmentsErrorCodes.validationError, 'Assignment title is required');
@@ -158,7 +158,6 @@ export const createAssignment = async (
       .single();
 
     if (error) {
-      console.error('[createAssignment] Error:', error);
       return failure(500, assignmentsErrorCodes.createError, error.message);
     }
 
@@ -169,7 +168,6 @@ export const createAssignment = async (
     return success(mapRowToAssignmentResponse(data));
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[createAssignment] Error:', errorMessage);
     return failure(500, assignmentsErrorCodes.createError, errorMessage);
   }
 };
@@ -181,7 +179,7 @@ export const updateAssignment = async (
   input: UpdateAssignmentInput,
 ): Promise<HandlerResult<AssignmentResponse, AssignmentsServiceError, unknown>> => {
   try {
-    console.log(`[updateAssignment] Updating assignment ${assignmentId}`);
+    // 전달된 필드만 부분 업데이트합니다. 빈 문자열은 허용하지 않으며 필요 시 null로 정규화합니다.
 
     if (input.title !== undefined && !input.title.trim()) {
       return failure(400, assignmentsErrorCodes.validationError, 'Assignment title cannot be empty');
@@ -209,14 +207,12 @@ export const updateAssignment = async (
       .single();
 
     if (error || !data) {
-      console.log('[updateAssignment] Assignment not found or unauthorized');
       return failure(404, assignmentsErrorCodes.notFound, 'Assignment not found');
     }
 
     return success(mapRowToAssignmentResponse(data));
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[updateAssignment] Error:', errorMessage);
     return failure(500, assignmentsErrorCodes.updateError, errorMessage);
   }
 };
@@ -228,7 +224,7 @@ export const updateAssignmentStatus = async (
   status: 'draft' | 'published' | 'closed',
 ): Promise<HandlerResult<AssignmentResponse, AssignmentsServiceError, unknown>> => {
   try {
-    console.log(`[updateAssignmentStatus] Updating assignment ${assignmentId} status to ${status}`);
+    // 상태 변경은 'closed'로 전환된 이후에는 다시 변경할 수 없도록 제한합니다.
 
     const { data: existing } = await client
       .from(ASSIGNMENTS_TABLE)
@@ -259,7 +255,6 @@ export const updateAssignmentStatus = async (
     return success(mapRowToAssignmentResponse(data));
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[updateAssignmentStatus] Error:', errorMessage);
     return failure(500, assignmentsErrorCodes.updateError, errorMessage);
   }
 };

@@ -39,13 +39,18 @@ export const getLearnerDashboard = async (
 
     const courseIds = enrolledCourses.map((c) => c.id);
 
-    const assignmentsResult = await getAssignmentsByCourses(client, courseIds, 'published');
-    if (!assignmentsResult.ok) {
-      const errorResult = assignmentsResult as unknown as ErrorResult<DashboardServiceError, unknown>;
+    // 게시(published)와 마감(closed)을 모두 합쳐 진행률/제출 집계에 사용
+    const publishedRes = await getAssignmentsByCourses(client, courseIds, 'published');
+    const closedRes = await getAssignmentsByCourses(client, courseIds, 'closed');
+
+    if (!publishedRes.ok && !closedRes.ok) {
+      const errorResult = (publishedRes.ok ? closedRes : publishedRes) as unknown as ErrorResult<DashboardServiceError, unknown>;
       return failure(errorResult.status, errorResult.error.code, errorResult.error.message);
     }
 
-    const assignments = assignmentsResult.data.assignments;
+    const publishedAssignments = publishedRes.ok ? publishedRes.data.assignments : [];
+    const closedAssignments = closedRes.ok ? closedRes.data.assignments : [];
+    const assignments = [...publishedAssignments, ...closedAssignments];
     const assignmentIds = assignments.map((a) => a.id);
 
     const submissionsResult = await getSubmissionsByLearner(client, userId, assignmentIds);
@@ -96,7 +101,8 @@ export const getLearnerDashboard = async (
       };
     });
 
-    const upcomingAssignmentsData = assignments
+    // 예정 과제는 공개(published)만 대상으로 계산
+    const upcomingAssignmentsData = publishedAssignments
       .filter((assignment) => assignment.dueDate && isUpcomingAssignment(assignment.dueDate))
       .map((assignment) => {
         const course = enrolledCourses.find((c) => c.id === assignment.courseId);
