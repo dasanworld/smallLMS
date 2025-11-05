@@ -147,7 +147,8 @@ export const getLearnerAssignmentsAll = async (
         courseTitle: titleMap.get(a.courseId) || '',
         title: a.title,
         dueDate: a.dueDate ?? null,
-        status: a.status,
+        // 'archived' 상태는 학습자 목록에서는 'closed'로 취급하여 노출합니다.
+        status: (a.status === 'archived' ? 'closed' : a.status) as 'draft' | 'published' | 'closed',
       }));
     return success({ assignments });
   } catch (error) {
