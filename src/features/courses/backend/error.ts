@@ -3,6 +3,8 @@ export const coursesErrorCodes = {
   fetchError: 'COURSE_FETCH_ERROR',
   validationError: 'COURSE_VALIDATION_ERROR',
   unauthorized: 'COURSE_UNAUTHORIZED',
+  createError: 'COURSE_CREATE_ERROR',
+  updateError: 'COURSE_UPDATE_ERROR',
 } as const;
 
 type CoursesErrorValue = (typeof coursesErrorCodes)[keyof typeof coursesErrorCodes];

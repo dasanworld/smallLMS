@@ -4,6 +4,7 @@ import { withAppContext } from "@/backend/middleware/context";
 import { withSupabase } from "@/backend/middleware/supabase";
 import { registerExampleRoutes } from "@/features/example/backend/route";
 import { registerOnboardingRoutes } from "@/features/auth/backend/onboarding/route";
+import { registerRoleRoutes } from "@/features/auth/backend/role-route";
 import { registerCoursesRoutes } from "@/features/courses/backend/route";
 import { registerAssignmentsRoutes } from "@/features/assignments/backend/route";
 import { registerSubmissionsRoutes } from "@/features/submissions/backend/route";
@@ -13,6 +14,7 @@ import { registerEnrollmentsRoutes } from "@/features/enrollments/backend/route"
 import { registerDashboardRoutes } from "@/features/dashboard/backend/route";
 import { registerGradesRoutes } from "@/features/grades/backend/route";
 import { registerInstructorDashboardRoutes } from "@/features/instructor-dashboard/backend/route";
+import { registerAdminRoutes } from "@/features/admin/backend/route";
 import type { AppEnv } from "@/backend/hono/context";
 
 let singletonApp: Hono<AppEnv> | null = null;
@@ -29,6 +31,7 @@ export const createHonoApp = () => {
   app.use("*", withSupabase());
 
   registerOnboardingRoutes(app);
+  registerRoleRoutes(app);
   registerCoursesRoutes(app);
   registerAssignmentsRoutes(app);
   registerSubmissionsRoutes(app);
@@ -38,6 +41,7 @@ export const createHonoApp = () => {
   registerDashboardRoutes(app);
   registerGradesRoutes(app);
   registerInstructorDashboardRoutes(app);
+  registerAdminRoutes(app);
   registerExampleRoutes(app);
 
   app.notFound((c) => {

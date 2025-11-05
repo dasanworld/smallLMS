@@ -13,7 +13,11 @@ type UseOnboardingMutationOptions = {
 export function useOnboarding(options?: UseOnboardingMutationOptions) {
   return useMutation({
     mutationFn: async (data: OnboardingRequest) => {
-      const response = await axios.post<OnboardingResponse>('/api/auth/onboarding', data);
+      // 온보딩 데이터 제출. same-origin이므로 쿠키가 자동 전송되지만,
+      // 일부 환경에 대비해 withCredentials를 유지
+      const response = await axios.post<OnboardingResponse>('/api/auth/onboarding', data, {
+        withCredentials: true,
+      });
       return response.data;
     },
     onSuccess: options?.onSuccess,

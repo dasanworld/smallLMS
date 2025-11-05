@@ -31,3 +31,10 @@ export const TermsAgreementTableRowSchema = z.object({
 });
 
 export type TermsAgreementTableRow = z.infer<typeof TermsAgreementTableRowSchema>;
+
+export const OnboardingStatusResponseSchema = z.object({
+  completed: z.boolean(),
+  role: z.enum(['learner', 'instructor', 'operator']).optional(),
+});
+
+export type OnboardingStatusResponse = z.infer<typeof OnboardingStatusResponseSchema>;

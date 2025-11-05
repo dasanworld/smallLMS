@@ -63,6 +63,64 @@ export async function middleware(request: NextRequest) {
         return copyCookies(response, NextResponse.redirect(loginUrl));
       }
     )
+    .when(
+      ({ user: currentUser, pathname }) =>
+        currentUser && 
+        (pathname === "/dashboard" || pathname === "/instructor/dashboard" || pathname === "/admin"),
+      async ({ user: currentUser, pathname }) => {
+        // 대시보드 페이지 접근 시 역할에 따라 리다이렉트
+        const supabaseAuth = createServerClient<Database>(
+          env.NEXT_PUBLIC_SUPABASE_URL,
+          env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+          {
+            cookies: {
+              getAll() {
+                return request.cookies.getAll();
+              },
+              setAll(cookiesToSet) {
+                cookiesToSet.forEach(({ name, value, options }) => {
+                  request.cookies.set({ name, value, ...options });
+                  response.cookies.set({ name, value, ...options });
+                });
+              },
+            },
+          }
+        );
+
+        const { data: profile, error: profileError } = await supabaseAuth
+          .from("profiles")
+          .select("role")
+          .eq("id", currentUser.id)
+          .single<{ role: string }>();
+
+        if (profileError || !profile) {
+          return response;
+        }
+
+        const role = profile.role;
+
+        // 현재 경로와 역할이 맞지 않으면 리다이렉트
+        if (role === "learner" && pathname !== "/dashboard") {
+          const redirectUrl = request.nextUrl.clone();
+          redirectUrl.pathname = "/dashboard";
+          return copyCookies(response, NextResponse.redirect(redirectUrl));
+        }
+
+        if (role === "instructor" && pathname !== "/instructor/dashboard") {
+          const redirectUrl = request.nextUrl.clone();
+          redirectUrl.pathname = "/instructor/dashboard";
+          return copyCookies(response, NextResponse.redirect(redirectUrl));
+        }
+
+        if (role === "operator" && pathname !== "/admin") {
+          const redirectUrl = request.nextUrl.clone();
+          redirectUrl.pathname = "/admin";
+          return copyCookies(response, NextResponse.redirect(redirectUrl));
+        }
+
+        return response;
+      }
+    )
     .otherwise(() => response);
 
   return decision;

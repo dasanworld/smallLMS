@@ -2,6 +2,9 @@
 
 import { DashboardOverview } from '@/features/dashboard/components/dashboard-overview';
 import { useLearnerDashboardQuery } from '@/features/dashboard/hooks/useLearnerDashboard';
+import { RoleBadge } from '@/components/role-badge';
+import { useAuthenticatedRole } from '@/features/auth/hooks/useAuthenticatedRole';
+import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser';
 
 type DashboardPageProps = {
   params: Promise<Record<string, never>>;
@@ -9,11 +12,60 @@ type DashboardPageProps = {
 
 export default function DashboardPage({ params }: DashboardPageProps) {
   void params;
-  const { data, isLoading } = useLearnerDashboardQuery();
 
-  if (!data) {
-    return <DashboardOverview data={{ courses: [], upcomingAssignments: [], recentFeedback: [] }} isLoading={isLoading} />;
+  const { isAuthenticated, isLoading: authLoading } = useCurrentUser();
+  const { isLoading: roleLoading } = useAuthenticatedRole('learner');
+  const { data, isLoading: dashboardLoading, error } = useLearnerDashboardQuery();
+
+  // 인증 확인 중이거나 인증되지 않은 경우
+  if (authLoading || !isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-slate-600">인증 확인 중...</p>
+        </div>
+      </div>
+    );
   }
 
-  return <DashboardOverview data={data} isLoading={isLoading} />;
+  if (roleLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-slate-600">권한 확인 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // API 오류가 발생한 경우
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-600 text-lg font-semibold mb-2">데이터를 불러올 수 없습니다</div>
+          <p className="text-slate-600">잠시 후 다시 시도해주세요.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-white">
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-4xl font-bold text-slate-900 flex items-center gap-2">
+              📚 학습 대시보드
+            </h1>
+            <p className="text-slate-600 mt-2">수강 중인 코스와 과제 현황을 확인하세요</p>
+          </div>
+          <RoleBadge />
+        </div>
+        <DashboardOverview data={data || { courses: [], upcomingAssignments: [], recentFeedback: [] }} isLoading={dashboardLoading} />
+      </div>
+    </div>
+  );
 }

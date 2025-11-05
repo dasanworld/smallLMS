@@ -1,8 +1,9 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import type { CourseSummary, CourseDetail, Category, Difficulty, CourseListParams } from '@/lib/shared/course-types';
+import type { CreateCourseInput, UpdateCourseInput } from '@/features/courses/backend/service';
 
 export function useCoursesQuery(params: CourseListParams) {
   return useQuery({
@@ -50,6 +51,71 @@ export function useDifficultiesQuery() {
     queryFn: async () => {
       const response = await axios.get<{ data: Difficulty[] }>('/api/difficulties');
       return response.data.data;
+    },
+  });
+}
+
+export function useInstructorCoursesQuery() {
+  return useQuery({
+    queryKey: ['instructor-courses'],
+    queryFn: async () => {
+      const response = await axios.get<{ data: { courses: CourseSummary[]; total: number } }>('/api/instructor/courses');
+      return response.data.data;
+    },
+  });
+}
+
+export function useInstructorCourseQuery(courseId: number) {
+  return useQuery({
+    queryKey: ['instructor-course', courseId],
+    queryFn: async () => {
+      const response = await axios.get<{ data: CourseDetail }>(`/api/instructor/courses/${courseId}`);
+      return response.data.data;
+    },
+    enabled: courseId > 0,
+  });
+}
+
+export function useCreateCourseMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: CreateCourseInput) => {
+      const response = await axios.post<{ data: CourseDetail }>('/api/instructor/courses', input);
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['instructor-courses'] });
+    },
+  });
+}
+
+export function useUpdateCourseMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ courseId, input }: { courseId: number; input: UpdateCourseInput }) => {
+      const response = await axios.put<{ data: CourseDetail }>(`/api/instructor/courses/${courseId}`, input);
+      return response.data.data;
+    },
+    onSuccess: (_, { courseId }) => {
+      queryClient.invalidateQueries({ queryKey: ['instructor-courses'] });
+      queryClient.invalidateQueries({ queryKey: ['instructor-course', courseId] });
+    },
+  });
+}
+
+export function useUpdateCourseStatusMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ courseId, status }: { courseId: number; status: 'draft' | 'published' | 'archived' }) => {
+      const response = await axios.patch<{ data: { status: string } }>(`/api/instructor/courses/${courseId}/status`, { status });
+      return response.data.data;
+    },
+    onSuccess: (_, { courseId }) => {
+      queryClient.invalidateQueries({ queryKey: ['instructor-courses'] });
+      queryClient.invalidateQueries({ queryKey: ['instructor-course', courseId] });
     },
   });
 }

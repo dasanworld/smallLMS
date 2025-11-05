@@ -28,7 +28,7 @@ export default function SignupPage({ params }: SignupPageProps) {
   void params;
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isAuthenticated, refresh } = useCurrentUser();
+  const { user: userCurrent, isAuthenticated, isLoading, refresh } = useCurrentUser();
   
   const [step, setStep] = useState<SignupStep>("auth");
   const [authState, setAuthState] = useState(defaultAuthState);
@@ -39,10 +39,12 @@ export default function SignupPage({ params }: SignupPageProps) {
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
 
   const { mutate: completeOnboarding, isPending: isOnboardingPending } = useOnboarding({
+    // 온보딩 성공 시 이전 경로(또는 홈)로 이동
     onSuccess: () => {
       const redirectedFrom = searchParams.get("redirectedFrom") ?? "/";
       router.replace(redirectedFrom);
     },
+    // 실패 시 사용자에게 오류 메시지 표시
     onError: (error) => {
       setErrorMessage(error.message ?? "온보딩에 실패했습니다.");
       setIsSubmitting(false);
@@ -50,6 +52,7 @@ export default function SignupPage({ params }: SignupPageProps) {
   });
 
   useEffect(() => {
+    // 인증이 완료되면 다음 단계(역할 선택)로 자동 이동
     if (isAuthenticated && step === "auth") {
       setStep("role");
     }
@@ -71,53 +74,53 @@ export default function SignupPage({ params }: SignupPageProps) {
     []
   );
 
-  const handleAuthSubmit = useCallback(
-    async (event: React.FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-      setIsSubmitting(true);
-      setErrorMessage(null);
-      setInfoMessage(null);
+    const handleAuthSubmit = useCallback(
+      async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        setIsSubmitting(true);
+        setErrorMessage(null);
+        setInfoMessage(null);
 
-      if (authState.password !== authState.confirmPassword) {
-        setErrorMessage("비밀번호가 일치하지 않습니다.");
-        setIsSubmitting(false);
-        return;
-      }
-
-      const supabase = getSupabaseBrowserClient();
-
-      try {
-        const result = await supabase.auth.signUp({
-          email: authState.email,
-          password: authState.password,
-        });
-
-        if (result.error) {
-          setErrorMessage(result.error.message ?? "회원가입에 실패했습니다.");
+        if (authState.password !== authState.confirmPassword) {
+          setErrorMessage("비밀번호가 일치하지 않습니다.");
           setIsSubmitting(false);
           return;
         }
 
-        await refresh();
+        const supabase = getSupabaseBrowserClient();
 
-        if (result.data.session) {
-          setStep("role");
-          setIsSubmitting(false);
-        } else {
-          setInfoMessage(
-            "확인 이메일을 보냈습니다. 이메일 인증 후 로그인해 주세요."
-          );
-          router.prefetch("/login");
-          setAuthState(defaultAuthState);
+        try {
+          const result = await supabase.auth.signUp({
+            email: authState.email,
+            password: authState.password,
+          });
+
+          if (result.error) {
+            setErrorMessage(result.error.message ?? "회원가입에 실패했습니다.");
+            setIsSubmitting(false);
+            return;
+          }
+
+          await refresh();
+
+          if (result.data.session) {
+            setStep("role");
+            setIsSubmitting(false);
+          } else {
+            setInfoMessage(
+              "확인 이메일을 보냈습니다. 이메일 인증 후 로그인해 주세요."
+            );
+            router.prefetch("/login");
+            setAuthState(defaultAuthState);
+            setIsSubmitting(false);
+          }
+        } catch (error) {
+          setErrorMessage("회원가입 처리 중 문제가 발생했습니다.");
           setIsSubmitting(false);
         }
-      } catch (error) {
-        setErrorMessage("회원가입 처리 중 문제가 발생했습니다.");
-        setIsSubmitting(false);
-      }
-    },
-    [authState.confirmPassword, authState.email, authState.password, refresh, router]
-  );
+      },
+      [authState.confirmPassword, authState.email, authState.password, refresh, router]
+    );
 
   const handleRoleSubmit = useCallback(() => {
     if (selectedRole) {
@@ -139,12 +142,13 @@ export default function SignupPage({ params }: SignupPageProps) {
     setIsSubmitting(true);
     setErrorMessage(null);
 
-    completeOnboarding({
+    const onboardingData = {
       role: selectedRole,
       name: profileData.name,
       phoneNumber: profileData.phoneNumber || undefined,
       termsAgreed: true,
-    });
+    };
+    completeOnboarding(onboardingData);
   }, [selectedRole, profileData, completeOnboarding]);
 
   if (isAuthenticated && step === "auth") {
@@ -262,20 +266,15 @@ export default function SignupPage({ params }: SignupPageProps) {
           )}
 
           {step === "terms" && (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleTermsSubmit();
-              }}
-            >
+            <div className="flex flex-col gap-4">
               <TermsAgreement
                 onSubmit={() => handleTermsSubmit()}
                 disabled={isSubmitting || isOnboardingPending}
               />
               {errorMessage ? (
-                <p className="mt-4 text-sm text-rose-500">{errorMessage}</p>
+                <p className="text-sm text-rose-500">{errorMessage}</p>
               ) : null}
-            </form>
+            </div>
           )}
         </div>
 

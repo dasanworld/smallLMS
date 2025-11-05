@@ -106,3 +106,160 @@ export const getAssignmentsByCourses = async (
     return failure(500, assignmentsErrorCodes.fetchError, errorMessage);
   }
 };
+
+export interface CreateAssignmentInput {
+  title: string;
+  description?: string;
+  dueDate: string;
+  scoreWeighting: number;
+  allowLateSubmission?: boolean;
+  allowResubmission?: boolean;
+}
+
+export interface UpdateAssignmentInput {
+  title?: string;
+  description?: string;
+  dueDate?: string;
+  scoreWeighting?: number;
+  allowLateSubmission?: boolean;
+  allowResubmission?: boolean;
+}
+
+export const createAssignment = async (
+  client: SupabaseClient,
+  courseId: number,
+  userId: string,
+  input: CreateAssignmentInput,
+): Promise<HandlerResult<AssignmentResponse, AssignmentsServiceError, unknown>> => {
+  try {
+    console.log(`[createAssignment] Creating assignment for course ${courseId}`);
+
+    if (!input.title?.trim()) {
+      return failure(400, assignmentsErrorCodes.validationError, 'Assignment title is required');
+    }
+
+    if (input.scoreWeighting < 0 || input.scoreWeighting > 100) {
+      return failure(400, assignmentsErrorCodes.validationError, 'Score weighting must be between 0 and 100');
+    }
+
+    const { data, error } = await client
+      .from(ASSIGNMENTS_TABLE)
+      .insert({
+        course_id: courseId,
+        title: input.title.trim(),
+        description: input.description?.trim() || null,
+        due_date: input.dueDate,
+        score_weighting: input.scoreWeighting,
+        allow_late_submission: input.allowLateSubmission ?? true,
+        allow_resubmission: input.allowResubmission ?? true,
+        status: 'draft',
+      })
+      .select('*')
+      .single();
+
+    if (error) {
+      console.error('[createAssignment] Error:', error);
+      return failure(500, assignmentsErrorCodes.createError, error.message);
+    }
+
+    if (!data) {
+      return failure(500, assignmentsErrorCodes.createError, 'Failed to create assignment');
+    }
+
+    return success(mapRowToAssignmentResponse(data));
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[createAssignment] Error:', errorMessage);
+    return failure(500, assignmentsErrorCodes.createError, errorMessage);
+  }
+};
+
+export const updateAssignment = async (
+  client: SupabaseClient,
+  assignmentId: number,
+  courseId: number,
+  input: UpdateAssignmentInput,
+): Promise<HandlerResult<AssignmentResponse, AssignmentsServiceError, unknown>> => {
+  try {
+    console.log(`[updateAssignment] Updating assignment ${assignmentId}`);
+
+    if (input.title !== undefined && !input.title.trim()) {
+      return failure(400, assignmentsErrorCodes.validationError, 'Assignment title cannot be empty');
+    }
+
+    if (input.scoreWeighting !== undefined && (input.scoreWeighting < 0 || input.scoreWeighting > 100)) {
+      return failure(400, assignmentsErrorCodes.validationError, 'Score weighting must be between 0 and 100');
+    }
+
+    const updateData: any = {};
+    if (input.title !== undefined) updateData.title = input.title.trim();
+    if (input.description !== undefined) updateData.description = input.description.trim() || null;
+    if (input.dueDate !== undefined) updateData.due_date = input.dueDate;
+    if (input.scoreWeighting !== undefined) updateData.score_weighting = input.scoreWeighting;
+    if (input.allowLateSubmission !== undefined) updateData.allow_late_submission = input.allowLateSubmission;
+    if (input.allowResubmission !== undefined) updateData.allow_resubmission = input.allowResubmission;
+    updateData.updated_at = new Date().toISOString();
+
+    const { data, error } = await client
+      .from(ASSIGNMENTS_TABLE)
+      .update(updateData)
+      .eq('id', assignmentId)
+      .eq('course_id', courseId)
+      .select('*')
+      .single();
+
+    if (error || !data) {
+      console.log('[updateAssignment] Assignment not found or unauthorized');
+      return failure(404, assignmentsErrorCodes.notFound, 'Assignment not found');
+    }
+
+    return success(mapRowToAssignmentResponse(data));
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[updateAssignment] Error:', errorMessage);
+    return failure(500, assignmentsErrorCodes.updateError, errorMessage);
+  }
+};
+
+export const updateAssignmentStatus = async (
+  client: SupabaseClient,
+  assignmentId: number,
+  courseId: number,
+  status: 'draft' | 'published' | 'closed',
+): Promise<HandlerResult<AssignmentResponse, AssignmentsServiceError, unknown>> => {
+  try {
+    console.log(`[updateAssignmentStatus] Updating assignment ${assignmentId} status to ${status}`);
+
+    const { data: existing } = await client
+      .from(ASSIGNMENTS_TABLE)
+      .select('status')
+      .eq('id', assignmentId)
+      .eq('course_id', courseId)
+      .single();
+
+    if (!existing) {
+      return failure(404, assignmentsErrorCodes.notFound, 'Assignment not found');
+    }
+
+    if (existing.status === 'closed') {
+      return failure(400, assignmentsErrorCodes.validationError, 'Cannot change closed assignment status');
+    }
+
+    const { data, error } = await client
+      .from(ASSIGNMENTS_TABLE)
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq('id', assignmentId)
+      .select('*')
+      .single();
+
+    if (error || !data) {
+      return failure(500, assignmentsErrorCodes.updateError, 'Failed to update assignment status');
+    }
+
+    return success(mapRowToAssignmentResponse(data));
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[updateAssignmentStatus] Error:', errorMessage);
+    return failure(500, assignmentsErrorCodes.updateError, errorMessage);
+  }
+};

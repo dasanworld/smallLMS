@@ -22,7 +22,7 @@ export const onboardingSchema = z.object({
     (val) => !val || /^\d{10,}$/.test(val.replace(/[-\s]/g, '')),
     '유효한 휴대폰번호를 입력해주세요'
   ),
-  termsAgreed: z.boolean().refine((val) => val === true, '약관에 동의해야 합니다'),
+  termsAgreed: z.boolean(),
 });
 
 export type RoleInput = z.infer<typeof roleSchema>;

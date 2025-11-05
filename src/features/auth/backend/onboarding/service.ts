@@ -6,9 +6,11 @@ import {
 } from '@/backend/http/response';
 import {
   OnboardingResponseSchema,
+  OnboardingStatusResponseSchema,
   ProfileTableRowSchema,
   type OnboardingRequest,
   type OnboardingResponse,
+  type OnboardingStatusResponse,
 } from '@/features/auth/backend/onboarding/schema';
 import {
   onboardingErrorCodes,
@@ -18,6 +20,43 @@ import { UserRole } from '@/lib/shared/user-types';
 
 const PROFILES_TABLE = 'profiles';
 const TERMS_AGREEMENTS_TABLE = 'terms_agreements';
+
+export const checkOnboardingStatus = async (
+  client: SupabaseClient,
+  userId: string,
+): Promise<HandlerResult<OnboardingStatusResponse, OnboardingServiceError, unknown>> => {
+  try {
+    const { data: profile, error } = await client
+      .from(PROFILES_TABLE)
+      .select('role')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // No rows returned - user hasn't completed onboarding
+        return success({ completed: false });
+      }
+      return failure(
+        500,
+        onboardingErrorCodes.profileLookupError,
+        `Failed to check onboarding status: ${error.message}`
+      );
+    }
+
+    return success({
+      completed: true,
+      role: profile.role as 'learner' | 'instructor' | 'operator'
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return failure(
+      500,
+      onboardingErrorCodes.profileLookupError,
+      `Onboarding status check failed: ${errorMessage}`
+    );
+  }
+};
 
 export const completeOnboarding = async (
   client: SupabaseClient,
@@ -36,6 +75,8 @@ export const completeOnboarding = async (
     }
 
     const phoneNumber = data.phoneNumber || null;
+
+    // auth.users는 직접 쓰지 않음: 사용자 존재는 상위 라우터에서 토큰으로 검증됨
 
     const { data: profileData, error: profileError } = await client
       .from(PROFILES_TABLE)
