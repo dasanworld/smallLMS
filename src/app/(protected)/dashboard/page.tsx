@@ -11,7 +11,6 @@ import { useUserRole } from '@/features/auth/hooks/useUserRole';
 import { LearnerNav } from '@/features/learner-dashboard/components/learner-nav';
 import { QuickActions } from '@/features/learner-dashboard/components/quick-actions';
 import { RotateCw } from 'lucide-react';
-import { LogoutButton } from '@/components/logout-button';
 
 type DashboardPageProps = {
   params: Promise<Record<string, never>>;
@@ -92,7 +91,10 @@ export default function DashboardPage({ params }: DashboardPageProps) {
             <h1 className="text-4xl font-bold text-slate-900 flex items-center gap-2">
               📚 학습 대시보드
             </h1>
-            <p className="text-slate-600 mt-2">수강 중인 코스와 과제 현황을 확인하세요</p>
+            <p className="text-slate-600 mt-2">
+              수강 중인 코스와 과제 현황을 확인하세요
+              <span className="ml-2 text-xs text-slate-500">(새로고침후 기다려주세요)</span>
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <button
@@ -104,8 +106,6 @@ export default function DashboardPage({ params }: DashboardPageProps) {
               <RotateCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
               <span className="text-sm">{isFetching ? '새로고침 중...' : '새로고침'}</span>
             </button>
-            {/* 대시보드 상단 우측에 로그아웃 버튼 제공 */}
-            <LogoutButton />
             <RoleBadge />
           </div>
         </div>

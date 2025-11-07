@@ -55,7 +55,7 @@ export default function Home() {
     if (isAuthenticated && user) {
       return (
         <div className="flex items-center gap-3">
-          <span className="text-sm text-slate-300">{user.email}</span>
+          <span className="text-sm text-slate-900">{user.email}</span>
           <Link
             href="/dashboard"
             className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
@@ -64,7 +64,7 @@ export default function Home() {
           </Link>
           <button
             onClick={handleSignOut}
-            className="rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-300 hover:border-slate-400 hover:bg-slate-800 transition-colors"
+            className="rounded-lg border border-slate-400 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50 transition-colors"
           >
             로그아웃
           </button>

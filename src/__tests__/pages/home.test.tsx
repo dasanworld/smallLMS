@@ -65,3 +65,5 @@ describe('Home Page', () => {
     expect(screen.getByText('지금 시작하세요')).toBeInTheDocument();
   });
 });
+
+

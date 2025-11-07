@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { DashboardOverview } from '@/features/instructor-dashboard/components/dashboard-overview';
 import { RoleBadge } from '@/components/role-badge';
 import { useAuthenticatedRole } from '@/features/auth/hooks/useAuthenticatedRole';
-import { BookOpen, FileText, CheckCircle, User, Home } from 'lucide-react';
+import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser';
+import { BookOpen, FileText, CheckCircle, User, Home, Mail } from 'lucide-react';
 import { LogoutButton } from '@/components/logout-button';
 
 type InstructorDashboardPageProps = {
@@ -15,6 +16,8 @@ export default function InstructorDashboardPage({ params }: InstructorDashboardP
   void params;
 
   const { isLoading } = useAuthenticatedRole('instructor');
+  const { user, isLoading: userLoading } = useCurrentUser();
+  const emailLabel = userLoading ? '사용자 확인 중...' : user?.email ?? '이메일 정보 없음';
 
   if (isLoading) {
     return null;
@@ -25,7 +28,7 @@ export default function InstructorDashboardPage({ params }: InstructorDashboardP
       {/* Navigation Header */}
       <nav className="bg-white border-b border-slate-200">
         <div className="max-w-6xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-6">
               <Link
                 href="/"
@@ -38,7 +41,11 @@ export default function InstructorDashboardPage({ params }: InstructorDashboardP
               <span className="text-sm text-slate-500">강사 대시보드</span>
             </div>
             <div className="flex items-center gap-3">
-              <LogoutButton />
+              <span className="inline-flex items-center gap-1 text-sm text-slate-900">
+                <Mail className="w-4 h-4 text-slate-500" />
+                {emailLabel}
+              </span>
+              <LogoutButton className="px-3 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50" />
               <RoleBadge />
             </div>
           </div>

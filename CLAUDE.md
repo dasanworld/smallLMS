@@ -1,78 +1,480 @@
-# CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Commands
+<!-- Source: AGENTS.md -->
 
-### Development
-- `npm run dev` - Start development server with Turbopack
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run lint` - Run ESLint
+# AGENTS.md
 
-### Database
-- `npx supabase start` - Start local Supabase
-- `npx supabase reset` - Reset local database
-- `npx supabase db push` - Push migrations to remote
+Specialised sub-agents for LMS project automation. All agents follow the Next.js 15 + Hono + Supabase architecture defined in CLAUDE.md.
 
-## Architecture
+## Core Project Context
 
-This is a Next.js 15 full-stack application built with TypeScript using a feature-driven architecture.
+This LMS uses **feature-driven architecture** where each feature has:
+- **Backend**: `error.ts`, `schema.ts`, `service.ts`, `route.ts` in `src/features/[feature]/backend/`
+- **Frontend**: Components in `src/features/[feature]/components/`, hooks in `src/features/[feature]/hooks/`
+- **Shared**: Types in `src/lib/shared/` and feature-specific types in `src/features/[feature]/types.ts`
+- **Validation**: Zod schemas for runtime type safety
 
-### Backend (Hono API)
-- **API Routes**: Located at `/api/[[...hono]]` - catches all API requests
-- **Hono App**: Centralized in `src/backend/hono/app.ts` with singleton pattern
-- **Middleware Stack**: Error boundary → App context → Supabase auth
-- **Feature Routes**: Each feature registers routes in `src/features/[feature]/backend/route.ts`
-- **Services**: Business logic in `src/features/[feature]/backend/service.ts`
-- **Schemas**: Zod validation in `src/features/[feature]/backend/schema.ts`
+All commands available: `npm run dev`, `npm run build`, `npm run start`, `npm run lint`
 
-### Frontend (Next.js App Router)
-- **App Directory**: Uses App Router with `(protected)` route groups
-- **Authentication**: Supabase auth with middleware-based route protection
-- **State Management**: React Query for server state, Zustand for client state
-- **UI Components**: Shadcn/ui with Radix primitives and Tailwind CSS
-- **Forms**: React Hook Form with Zod validation
+---
 
-### Authentication Flow
-- **Middleware**: `src/middleware.ts` handles route protection and redirects
-- **Server Context**: `src/features/auth/server/load-current-user.ts` loads user on server
-- **Client Context**: `src/features/auth/context/current-user-context.tsx` provides user state
-- **Protected Routes**: Use `(protected)` layout for authenticated pages
+## Available Sub-Agents
 
-### Database
-- **Supabase**: PostgreSQL with Row Level Security
-- **Migrations**: Located in `supabase/migrations/`
-- **Types**: Generated types in `src/lib/supabase/types.ts`
-- **Clients**: Server/client Supabase instances with SSR support
+### 1. `feature-planner` (Feature Planning Agent)
 
-### Feature Structure
-Each feature follows this pattern:
+**Purpose**: Analyze specification documents and create detailed implementation plans aligned with project architecture.
+
+**When to use**:
+- Starting a new use case implementation
+- Need to understand all requirements before coding
+- Create component/file structure plan
+- Validate nothing is missed from spec/plan
+
+**Takes**:
+- Spec files (@docs/XXX/spec.md)
+- Plan files (@docs/XXX/plan.md)
+- Database schema (docs/database.md)
+- PRD (docs/prd.md)
+
+**Returns**:
+- Complete file structure with paths
+- Backend files needed (error.ts, schema.ts, service.ts, route.ts)
+- Frontend components and hooks needed
+- Shared types and validation schemas
+- Database queries required
+- Integration points with existing features
+- Implementation order and dependencies
+
+**Example**:
 ```
-src/features/[feature]/
-├── backend/
-│   ├── route.ts      # API routes
-│   ├── service.ts    # Business logic
-│   ├── schema.ts     # Zod validation
-│   └── error.ts      # Error definitions
-├── components/       # React components
-├── hooks/           # React Query hooks
-├── lib/             # DTOs and utilities
-└── types.ts         # TypeScript types
+Agent: feature-planner
+Task: Plan Use Case 004 (Instructor Dashboard) implementation
+Context: Reference docs/004/spec.md, docs/004/plan.md, docs/database.md
+Expected Output: Complete implementation plan with file structure, 
+all components to create, and implementation order
 ```
 
-### Key Technologies
-- **Next.js 15**: App Router, Server Components, Middleware
-- **Hono**: Lightweight web framework for API routes
-- **Supabase**: Authentication, database, real-time subscriptions
-- **React Query**: Server state management and caching
-- **Zod**: Runtime type validation
-- **Tailwind CSS**: Utility-first styling
-- **TypeScript**: Full type safety across stack
+---
 
-### Development Patterns
-- Use Server Components by default, Client Components only when needed
-- Feature-based organization with co-located backend/frontend code
-- Standardized error handling with typed error responses
-- Type-safe API contracts using Zod schemas
-- Consistent file naming: kebab-case for files, PascalCase for components
+### 2. `backend-builder` (Backend Code Generation Agent)
+
+**Purpose**: Generate backend files following feature-driven architecture patterns.
+
+**When to use**:
+- Need to create error.ts, schema.ts, service.ts, route.ts
+- Create Zod validation schemas
+- Implement database service functions
+- Generate Hono route handlers with logging
+
+**Takes**:
+- Feature name and requirements
+- Database schema (docs/database.md)
+- Existing error patterns (enrollments, courses examples)
+- Existing service patterns (courses, enrollments service.ts)
+
+**Returns**:
+- `error.ts` with typed error codes following `Record<ErrorType, string>` pattern
+- `schema.ts` with Zod schemas for request/response validation
+- `service.ts` with async functions using Supabase client
+- `route.ts` with Hono route handlers and logger integration
+
+**Example**:
+```
+Agent: backend-builder
+Task: Generate backend structure for submissions feature
+Context: Create error handling, schemas, services for assignment submissions
+Database: assignments table with assignments_id, status, created_at, updated_at
+Expected Output: Complete error.ts, schema.ts, service.ts, route.ts files
+```
+
+---
+
+### 3. `frontend-builder` (Frontend Code Generation Agent)
+
+**Purpose**: Generate React components and hooks following Next.js App Router patterns.
+
+**When to use**:
+- Create React components (use 'use client' directive)
+- Generate React Query hooks
+- Create forms with React Hook Form + Zod validation
+- Build UI with Tailwind CSS and shadcn/ui patterns
+
+**Takes**:
+- Component requirements and types
+- Existing component examples (course-card, course-filters, etc.)
+- Backend schemas and API response types
+- Design specifications
+
+**Returns**:
+- React components with proper TypeScript types
+- React Query hooks with proper queryKey and error handling
+- Forms with validation using React Hook Form
+- Tailwind CSS styled components
+- Proper error and loading states
+
+**Example**:
+```
+Agent: frontend-builder
+Task: Generate components for instructor dashboard
+Context: Display instructor's courses, pending submissions count, recent submissions
+Need: CourseCard, PendingSubmissionsWidget, RecentSubmissionsTable components
+Expected Output: Complete React components with hooks and validation
+```
+
+---
+
+### 4. `type-validator` (Type Consistency Checker Agent)
+
+**Purpose**: Ensure type consistency between backend, frontend, and shared layers.
+
+**When to use**:
+- After backend implementation, validate frontend types match
+- Check Zod schema alignment with TypeScript interfaces
+- Validate React Query hook response types
+- Ensure API request/response types are consistent
+
+**Takes**:
+- Backend schema file (schema.ts)
+- Backend service function file (service.ts)
+- Frontend hook file (hooks/)
+- Frontend component files (components/)
+
+**Returns**:
+- Type consistency validation report
+- Identified mismatches between backend and frontend
+- Suggestions for type corrections
+- Verified type alignment across layers
+
+**Example**:
+```
+Agent: type-validator
+Task: Validate type consistency for submissions feature
+Context: Check submissions backend (schema.ts, service.ts) matches 
+frontend hooks (useSubmissions.ts) and components
+Expected Output: Type validation report with any issues found and fixes
+```
+
+---
+
+### 5. `error-fixer` (Build & Lint Error Resolution Agent)
+
+**Purpose**: Detect and automatically fix TypeScript, ESLint, and build errors.
+
+**When to use**:
+- After code generation, run build and fix all errors
+- TypeScript compilation fails
+- ESLint warnings prevent successful build
+- Import paths or type references are broken
+
+**Takes**:
+- Current codebase state
+- Error messages from `npm run build` or `npm run lint`
+
+**Returns**:
+- Fixed files with errors resolved
+- Build succeeding without warnings
+- ESLint passing with 0 warnings
+
+**Tools used**:
+- `npm run build` - TypeScript checking
+- `npm run lint` - ESLint checking
+- Read/Edit tools to fix identified issues
+
+**Example**:
+```
+Agent: error-fixer
+Task: Run build and fix all errors
+Context: After code generation, ensure zero build/lint errors
+Expected Output: Build and lint both pass with no errors or warnings
+```
+
+---
+
+### 6. `integration-connector` (Feature Integration Agent)
+
+**Purpose**: Register new feature routes in Hono app and connect to existing systems.
+
+**When to use**:
+- Register new route file in src/backend/hono/app.ts
+- Connect new frontend page to layout
+- Add new hooks to providers
+- Create navigation links between pages
+
+**Takes**:
+- New feature route file
+- New frontend pages
+- Existing integration patterns
+
+**Returns**:
+- Updated app.ts with new route registration
+- Updated layout.tsx with new pages
+- Updated navigation/menu items
+- Verified integration points
+
+**Example**:
+```
+Agent: integration-connector
+Task: Integrate submissions feature with existing app
+Context: Register submissionsRoutes in app.ts, add pages to layout
+Expected Output: Complete integration with all routes registered and accessible
+```
+
+---
+
+### 7. `api-documenter` (API Documentation Agent)
+
+**Purpose**: Generate API documentation from implemented routes and schemas.
+
+**When to use**:
+- Document newly implemented API endpoints
+- Create OpenAPI/Swagger specifications
+- Generate request/response examples
+- Document error codes and scenarios
+
+**Takes**:
+- route.ts files with endpoint implementations
+- schema.ts files with request/response schemas
+- error.ts files with error codes
+
+**Returns**:
+- API endpoint documentation (paths, methods, parameters)
+- Request/response schema examples
+- Error code documentation
+- Usage examples
+- OpenAPI/Swagger spec (optional)
+
+**Example**:
+```
+Agent: api-documenter
+Task: Generate API documentation for submissions endpoints
+Context: Document POST /api/submissions, GET /api/submissions/:id, 
+PUT /api/submissions/:id endpoints
+Expected Output: Complete API documentation with examples
+```
+
+---
+
+### 8. `performance-optimizer` (Database & Query Optimization Agent)
+
+**Purpose**: Analyze and optimize database queries and performance-critical code.
+
+**When to use**:
+- Complex queries with multiple joins needed
+- Query performance is slow
+- Need to optimize N+1 query problems
+- Identify missing database indexes
+
+**Takes**:
+- Database schema (docs/database.md)
+- Service functions (service.ts files)
+- Performance requirements/constraints
+
+**Returns**:
+- Optimized Supabase queries with proper joins
+- Index recommendations
+- Query performance suggestions
+- N+1 problem solutions
+
+**Example**:
+```
+Agent: performance-optimizer
+Task: Optimize dashboard queries
+Context: getLearnerDashboard needs to fetch courses, assignments, submissions efficiently
+Database: Multiple tables with foreign keys
+Expected Output: Optimized service functions using Supabase select with relations
+```
+
+---
+
+## Recommended Workflow by Task Type
+
+### 📋 Implementing a Complete Use Case
+```
+1. feature-planner    → Create detailed implementation plan
+2. backend-builder    → Generate all backend files
+3. frontend-builder   → Generate all frontend components
+4. error-fixer        → Run build and fix errors
+5. type-validator     → Validate type consistency
+6. integration-connector → Register routes and connect
+7. api-documenter     → Document endpoints
+```
+
+### 🐛 Quick Bug Fix
+```
+1. error-fixer        → Run build and fix errors
+```
+
+### ✨ Feature Enhancement
+```
+1. feature-planner    → Plan additions
+2. backend-builder    → Generate new backend pieces
+3. frontend-builder   → Generate new components
+4. error-fixer        → Fix errors
+5. type-validator     → Validate types
+6. integration-connector → Connect new pieces
+```
+
+### ⚡ Performance Optimization
+```
+1. performance-optimizer → Analyze and suggest optimizations
+2. backend-builder       → Regenerate optimized service functions
+3. error-fixer           → Fix any issues
+```
+
+---
+
+## Agent Request Format
+
+Use this standardized format when requesting agent tasks:
+
+```
+Agent: [agent-name]
+Task: [specific task description]
+Context: [project-specific details, file references]
+Expected Output: [what you want returned]
+```
+
+### Example: Full Use Case Implementation
+
+```
+Agent: feature-planner
+Task: Plan Use Case 005 (Assignment Submission) implementation
+Context: Reference docs/005/spec.md, docs/005/plan.md, docs/database.md, docs/prd.md
+Expected Output: Complete implementation plan with all required files, 
+database queries, and integration points
+
+Agent: backend-builder
+Task: Generate backend for assignment submissions
+Context: Use plan from feature-planner, follow patterns from enrollments/submissions backends
+Expected Output: error.ts, schema.ts, service.ts, route.ts with proper logging
+
+Agent: frontend-builder
+Task: Generate frontend for assignment submissions
+Context: Create submission form component, submission status display, feedback view
+Expected Output: React components with hooks and validation
+
+Agent: error-fixer
+Task: Run build and fix all errors
+Context: Ensure zero build/lint errors after generation
+Expected Output: Build and lint both pass
+
+Agent: type-validator
+Task: Validate type consistency
+Context: Verify backend schemas match frontend types across all layers
+Expected Output: Type validation report
+
+Agent: integration-connector
+Task: Integrate submissions feature with app
+Context: Register routes in app.ts, add pages to layout
+Expected Output: Feature fully integrated and accessible
+```
+
+
+
+<!-- Source: .ruler/AGENTS.md -->
+
+# AGENTS.md
+
+Centralised AI agent instructions. Add coding guidelines, style guides, and project context here.
+
+Ruler concatenates all .md files in this directory (and subdirectories), starting with AGENTS.md (if present), then remaining files in sorted order.
+
+# Supabase
+
+- if you need to add new table, please create migration. I'll paste it into supabase.
+- do not run supabase locally
+- store migration query for `.sql` file. in /supabase/migrations/
+
+
+#remind
+- Remind: 404는 미등록 API 라우트, 500/RLS 에러는 user_profiles 등 테이블의 RLS/마이그레이션 누락이 원인.
+- Rule: 엔드포인트 활성화 전 Hono/Next 라우트 등록과 관련 테이블의 마이그레이션·RLS 적용을 반드시 사전 점검.
+
+- Dev note: Local development uses migration `0004_disable_rls.sql` to disable RLS. Re‑enable RLS and restore policies before staging/production.
+
+- Remind: 401은 FE가 Authorization Bearer 토큰을 누락했고, 400/NOT NULL은 새 채널 upsert에 id=null 전송·응답 래핑 오해에서 발생.
+- Rule: 보호 API는 항상 액세스 토큰 포함, 신규 레코드는 id 필드 미포함, FE는 respond()의 비래핑 JSON 스키마로 파싱.
+
+- Remind: 임시저장 401은 Authorization 미첨부, 403은 user_profiles.role≠'advertiser' 인가 실패.
+- Rule: FE는 Supabase 세션 토큰을 Bearer로 항상 주입하고, 호출 전 필요한 역할을 확인·유도.
+
+// Debugging notes (Dashboards)
+- Advertiser dashboard 401/empty list often stems from missing Authorization/cookies; prefer SSR prefetch or preflight to ensure session, and send `withCredentials` + Bearer.
+- Avoid invalid DOM nesting (e.g., div inside p) in cards/badges to prevent hydration errors.
+
+
+
+<!-- Source: .ruler/AGENTS_SUMMARY.md -->
+
+# Sub-Agents Quick Reference
+
+Based on CLAUDE.md architecture: **Next.js 15 + Hono API + Supabase + Feature-Driven Structure**
+
+## 8 Specialized Sub-Agents
+
+| # | Agent | Purpose | When to Use |
+|---|-------|---------|------------|
+| 1️⃣ | **feature-planner** | Analyze specs, create implementation plans | Starting new use case |
+| 2️⃣ | **backend-builder** | Generate error.ts, schema.ts, service.ts, route.ts | Backend files needed |
+| 3️⃣ | **frontend-builder** | Generate React components, hooks, forms | Frontend components needed |
+| 4️⃣ | **type-validator** | Verify type consistency across layers | After backend/frontend generation |
+| 5️⃣ | **error-fixer** | Run build/lint and fix all errors | TypeScript/ESLint errors |
+| 6️⃣ | **integration-connector** | Register routes, connect with existing app | Feature needs integration |
+| 7️⃣ | **api-documenter** | Generate API documentation | After endpoints implemented |
+| 8️⃣ | **performance-optimizer** | Optimize queries and code | Performance concerns |
+
+## Recommended Workflows
+
+### 📋 Full Use Case Implementation (Standard)
+```
+feature-planner → backend-builder → frontend-builder → 
+error-fixer → type-validator → integration-connector → api-documenter
+```
+
+### 🐛 Quick Bug Fix
+```
+error-fixer
+```
+
+### ✨ Feature Enhancement
+```
+feature-planner → backend-builder → frontend-builder → 
+error-fixer → type-validator → integration-connector
+```
+
+### ⚡ Performance Optimization
+```
+performance-optimizer → backend-builder → error-fixer
+```
+
+## Standard Agent Request Format
+
+```
+Agent: [agent-name]
+Task: [specific task description]
+Context: [project-specific details, file references]
+Expected Output: [what you want returned]
+```
+
+### Example Request
+
+```
+Agent: feature-planner
+Task: Plan Use Case 004 (Instructor Dashboard) implementation
+Context: Reference docs/004/spec.md, docs/004/plan.md, docs/database.md, docs/prd.md
+Expected Output: Complete implementation plan with file structure, 
+all components to create, and implementation order
+```
+
+## Key Architecture Points (from CLAUDE.md)
+
+✅ **Backend**: Each feature has `error.ts`, `schema.ts`, `service.ts`, `route.ts`  
+✅ **Frontend**: Components in `/components`, hooks in `/hooks`  
+✅ **Shared**: Types in `src/lib/shared/`  
+✅ **Validation**: Zod schemas for runtime type safety  
+✅ **Commands**: `npm run dev`, `npm run build`, `npm run lint`  
+✅ **Tech Stack**: Next.js 15 + Hono + Supabase + React Query + Tailwind  
+
+---
+
+Full details available in **AGENTS.md** in repository root.
